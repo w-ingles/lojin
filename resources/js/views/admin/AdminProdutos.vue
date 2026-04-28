@@ -172,8 +172,12 @@ async function salvar() {
         if (form.description) fd.append('description', form.description);
         if (fileRef.value) fd.append('image', fileRef.value);
         const opts = { headers: { 'Content-Type': 'multipart/form-data' } };
-        if (editando.value) await api.post(`/admin/products/${form.id}`, fd, opts);
-        else                await api.post('/admin/products', fd, opts);
+        if (editando.value) {
+            fd.append('_method', 'PUT'); // Laravel method spoofing para FormData com arquivo
+            await api.post(`/admin/products/${form.id}`, fd, opts);
+        } else {
+            await api.post('/admin/products', fd, opts);
+        }
         toast.add({ severity:'success', summary: editando.value ? 'Produto atualizado!' : 'Produto criado!', life:2000 });
         dialog.value = false; carregar();
     } catch (err) {

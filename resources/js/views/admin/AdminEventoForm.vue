@@ -165,6 +165,7 @@ async function salvar() {
 
         let evento;
         if (editando) {
+            fd.append('_method', 'PUT'); // Laravel method spoofing: FormData não suporta PUT nativo
             const { data } = await api.post(`/admin/events/${route.params.id}`, fd, { headers:{'Content-Type':'multipart/form-data'} });
             evento = data;
         } else {
