@@ -66,6 +66,8 @@ const routes = [
               meta: { breadcrumb: [{ parent: 'Gestão', label: 'Produtos' }] } },
             { path: 'pedidos',      name: 'admin-pedidos',     component: () => import('@/views/admin/AdminPedidos.vue'),
               meta: { breadcrumb: [{ parent: 'Gestão', label: 'Pedidos' }] } },
+            { path: 'comissarios',  name: 'admin-comissarios', component: () => import('@/views/admin/AdminComissarios.vue'),
+              meta: { breadcrumb: [{ parent: 'Gestão', label: 'Comissários' }] } },
             { path: 'relatorios',   name: 'admin-relatorios',  component: () => import('@/views/admin/AdminRelatorios.vue'),
               meta: { breadcrumb: [{ parent: 'Gestão', label: 'Relatórios' }] } },
         ],

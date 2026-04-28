@@ -21,8 +21,9 @@ class User extends Authenticatable
         return ['email_verified_at' => 'datetime', 'password' => 'hashed'];
     }
 
-    public function tenant(): BelongsTo { return $this->belongsTo(Tenant::class); }
-    public function orders(): HasMany   { return $this->hasMany(Order::class); }
+    public function tenant(): BelongsTo       { return $this->belongsTo(Tenant::class); }
+    public function orders(): HasMany         { return $this->hasMany(Order::class); }
+    public function commissioners(): HasMany  { return $this->hasMany(Commissioner::class); }
 
     public function isSuperAdmin(): bool { return $this->role === 'super_admin'; }
     public function isAdmin(): bool      { return in_array($this->role, ['admin','super_admin']); }

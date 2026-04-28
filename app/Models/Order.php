@@ -12,18 +12,33 @@ class Order extends Model
     use BelongsToTenant;
 
     protected $fillable = [
-        'tenant_id','user_id','customer_name','customer_email','customer_phone',
+        'tenant_id','user_id','commissioner_id','customer_name','customer_email','customer_phone','customer_cpf',
         'subtotal','total','status','payment_method','payment_id','paid_at','notes',
     ];
 
+    protected $appends = ['customer_cpf_masked'];
+
     protected function casts(): array
     {
-        return ['subtotal' => 'decimal:2', 'total' => 'decimal:2', 'paid_at' => 'datetime'];
+        return [
+            'subtotal'     => 'decimal:2',
+            'total'        => 'decimal:2',
+            'paid_at'      => 'datetime',
+            'customer_cpf' => 'encrypted',
+        ];
     }
 
-    public function user(): BelongsTo      { return $this->belongsTo(User::class); }
-    public function items(): HasMany       { return $this->hasMany(OrderItem::class); }
-    public function tickets(): HasMany     { return $this->hasManyThrough(Ticket::class, OrderItem::class, 'order_id', 'order_item_id'); }
+    public function user(): BelongsTo         { return $this->belongsTo(User::class); }
+    public function commissioner(): BelongsTo { return $this->belongsTo(Commissioner::class); }
+    public function items(): HasMany          { return $this->hasMany(OrderItem::class); }
+    public function tickets(): HasMany        { return $this->hasManyThrough(Ticket::class, OrderItem::class, 'order_id', 'order_item_id'); }
+
+    public function getCustomerCpfMaskedAttribute(): ?string
+    {
+        if (!$this->customer_cpf) return null;
+        $cpf = preg_replace('/\D/', '', $this->customer_cpf);
+        return '***.***.***-' . substr($cpf, -2);
+    }
 
     public function getStatusLabelAttribute(): string
     {

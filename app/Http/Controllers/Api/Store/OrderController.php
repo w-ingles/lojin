@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api\Store;
 
 use App\Http\Controllers\Controller;
+use App\Models\Commissioner;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Ticket;
 use App\Models\TicketBatch;
+use App\Rules\CpfRule;
+use App\Scopes\TenantScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,29 +19,42 @@ class OrderController extends Controller
 {
     public function store(Request $request): JsonResponse
     {
+        $authUser = auth('sanctum')->user();
+
+        // Detecta se o usuário autenticado é comissário desta atlética
+        $commissioner = null;
+        if ($authUser) {
+            $commissioner = Commissioner::withoutGlobalScope(TenantScope::class)
+                ->where('tenant_id', app('current_tenant')->id)
+                ->where('user_id', $authUser->id)
+                ->where('is_active', true)
+                ->first();
+        }
+
         $data = $request->validate([
             'customer_name'  => ['required','string','max:100'],
             'customer_email' => ['nullable','email'],
             'customer_phone' => ['nullable','string','max:20'],
+            'customer_cpf'   => [$commissioner ? 'required' : 'nullable', 'string', new CpfRule()],
             'notes'          => ['nullable','string','max:500'],
             'items'          => ['required','array','min:1'],
             'items.*.type'   => ['required','in:ticket_batch,product'],
             'items.*.id'     => ['required','integer'],
             'items.*.qty'    => ['required','integer','min:1'],
+        ], [
+            'customer_cpf.required' => 'O CPF do cliente é obrigatório para comissários.',
         ]);
 
-        // $request->user() usa o guard 'web' (sessão), não o Sanctum.
-        // Para Bearer token precisamos de auth('sanctum')->user()
-        $authUser = auth('sanctum')->user();
-
-        $order = DB::transaction(function () use ($data, $authUser) {
+        $order = DB::transaction(function () use ($data, $authUser, $commissioner) {
             $order = Order::create([
-                'customer_name'  => $data['customer_name'],
-                'customer_email' => $data['customer_email'] ?? null,
-                'customer_phone' => $data['customer_phone'] ?? null,
-                'notes'          => $data['notes'] ?? null,
-                'user_id'        => $authUser?->id,
-                'status'         => 'pending',
+                'customer_name'   => $data['customer_name'],
+                'customer_email'  => $data['customer_email'] ?? null,
+                'customer_phone'  => $data['customer_phone'] ?? null,
+                'customer_cpf'    => isset($data['customer_cpf']) ? preg_replace('/\D/', '', $data['customer_cpf']) : null,
+                'commissioner_id' => $commissioner?->id,
+                'notes'           => $data['notes'] ?? null,
+                'user_id'         => $authUser?->id,
+                'status'          => 'pending',
             ]);
 
             $subtotal = 0;
@@ -113,6 +129,20 @@ class OrderController extends Controller
             ->paginate(20);
 
         return response()->json($orders);
+    }
+
+    public function commissionerStatus(Request $request): JsonResponse
+    {
+        $commissioner = Commissioner::withoutGlobalScope(TenantScope::class)
+            ->where('tenant_id', app('current_tenant')->id)
+            ->where('user_id', $request->user()->id)
+            ->where('is_active', true)
+            ->first();
+
+        return response()->json([
+            'is_commissioner'  => (bool) $commissioner,
+            'commissioner_id'  => $commissioner?->id,
+        ]);
     }
 
     public function meusIngressos(Request $request): JsonResponse

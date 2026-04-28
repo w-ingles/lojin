@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Store;
 use App\Http\Controllers\Api\SuperAdmin\TenantController;
 use App\Http\Controllers\Api\SuperAdmin\UniversityController;
+use App\Http\Controllers\Api\SuperAdmin\CommissionerController as SuperAdminCommissionerController;
 use Illuminate\Support\Facades\Route;
 
 // ── Autenticação ──────────────────────────────────────────────────────────────
@@ -61,8 +62,9 @@ Route::middleware('require.tenant')->group(function () {
 
 // ── Usuário logado ────────────────────────────────────────────────────────────
 Route::middleware(['auth:sanctum','require.tenant'])->group(function () {
-    Route::get('/my-orders',  [Store\OrderController::class, 'myOrders']);
-    Route::get('/my-tickets', [Store\OrderController::class, 'meusIngressos']);
+    Route::get('/my-orders',          [Store\OrderController::class, 'myOrders']);
+    Route::get('/my-tickets',         [Store\OrderController::class, 'meusIngressos']);
+    Route::get('/commissioner/status',[Store\OrderController::class, 'commissionerStatus']);
 });
 
 // ── Admin da atlética ─────────────────────────────────────────────────────────
@@ -86,6 +88,13 @@ Route::middleware(['auth:sanctum','admin'])->prefix('admin')->group(function () 
 
     Route::get('/reports/sales',  [Admin\ReportController::class, 'vendas']);
     Route::get('/reports/export', [Admin\ReportController::class, 'exportar']);
+
+    Route::get('/comissarios',                              [Admin\CommissionerController::class, 'index']);
+    Route::get('/comissarios/buscar-usuario',               [Admin\CommissionerController::class, 'buscarUsuario']);
+    Route::post('/comissarios',                             [Admin\CommissionerController::class, 'store']);
+    Route::put('/comissarios/{commissioner}',               [Admin\CommissionerController::class, 'update']);
+    Route::delete('/comissarios/{commissioner}',            [Admin\CommissionerController::class, 'destroy']);
+    Route::get('/comissarios/{commissioner}/vendas',        [Admin\CommissionerController::class, 'vendas']);
 });
 
 // ── Super Admin ───────────────────────────────────────────────────────────────
@@ -104,4 +113,6 @@ Route::middleware(['auth:sanctum','super_admin'])->prefix('super-admin')->group(
     Route::post('/universidades',                     [UniversityController::class, 'store']);
     Route::put('/universidades/{university}',         [UniversityController::class, 'update']);
     Route::delete('/universidades/{university}',      [UniversityController::class, 'destroy']);
+
+    Route::get('/comissarios',                        [SuperAdminCommissionerController::class, 'index']);
 });
