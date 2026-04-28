@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Rules\CpfRule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -46,10 +47,13 @@ class TenantController extends Controller
             'plan'           => ['nullable','in:basic,premium'],
             'admin_name'     => ['required','string','max:100'],
             'admin_email'    => ['required','email','unique:users,email'],
+            'admin_cpf'      => ['required','string', new CpfRule(), Rule::unique('users','cpf')],
             'admin_password' => ['required','string','min:8'],
         ], [
             'university_id.required' => 'A universidade é obrigatória.',
             'university_id.exists'   => 'Universidade inválida ou não encontrada.',
+            'admin_cpf.required'     => 'O CPF do administrador é obrigatório.',
+            'admin_cpf.unique'       => 'Este CPF já está cadastrado na plataforma.',
         ]);
 
         $tenant = Tenant::create([
@@ -67,6 +71,7 @@ class TenantController extends Controller
             'tenant_id' => $tenant->id,
             'name'      => $data['admin_name'],
             'email'     => $data['admin_email'],
+            'cpf'       => preg_replace('/\D/', '', $data['admin_cpf']),
             'password'  => Hash::make($data['admin_password']),
             'role'      => 'admin',
         ]);
@@ -117,9 +122,14 @@ class TenantController extends Controller
         $data = $request->validate([
             'name'     => ['required','string','max:100'],
             'email'    => ['required','email','unique:users,email'],
+            'cpf'      => ['required','string', new CpfRule(), Rule::unique('users','cpf')],
             'password' => ['required','string','min:8'],
             'role'     => ['required','in:admin,user'],
+        ], [
+            'cpf.required' => 'O CPF é obrigatório.',
+            'cpf.unique'   => 'Este CPF já está cadastrado na plataforma.',
         ]);
+        $data['cpf'] = preg_replace('/\D/', '', $data['cpf']);
         $user = User::create([...$data, 'tenant_id' => $tenant->id, 'password' => Hash::make($data['password'])]);
         return response()->json($user, 201);
     }

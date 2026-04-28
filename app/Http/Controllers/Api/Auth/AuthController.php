@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Rules\CpfRule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
@@ -17,8 +19,14 @@ class AuthController extends Controller
         $data = $request->validate([
             'name'     => ['required','string','max:100'],
             'email'    => ['required','email','unique:users,email'],
+            'cpf'      => ['required','string', new CpfRule(), Rule::unique('users','cpf')],
             'password' => ['required', Password::min(8)],
+        ], [
+            'cpf.required' => 'O CPF é obrigatório.',
+            'cpf.unique'   => 'Este CPF já está cadastrado na plataforma.',
         ]);
+
+        $data['cpf'] = preg_replace('/\D/', '', $data['cpf']);
 
         $user  = User::create([...$data, 'role' => 'user']);
         $token = $user->createToken('app')->plainTextToken;

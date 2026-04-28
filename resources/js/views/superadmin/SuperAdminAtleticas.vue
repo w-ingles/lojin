@@ -129,6 +129,11 @@
                             <small class="p-error">{{ erros.admin_email }}</small></div>
                     </div>
                     <div class="col-12 md:col-6">
+                        <div class="field"><label>CPF <span class="p-error">*</span></label>
+                            <InputMask v-model="form.admin_cpf" mask="999.999.999-99" placeholder="000.000.000-00" :class="{ 'p-invalid': erros.admin_cpf }" />
+                            <small class="p-error">{{ erros.admin_cpf }}</small></div>
+                    </div>
+                    <div class="col-12">
                         <div class="field mb-0"><label>Senha <span class="p-error">*</span></label>
                             <Password v-model="form.admin_password" :class="{ 'p-invalid': erros.admin_password }" :feedback="false" toggleMask />
                             <small class="p-error">{{ erros.admin_password }}</small></div>
@@ -163,11 +168,12 @@
             <div v-if="formUser.visivel" class="mt-4 p-3 border-round" style="background:var(--surface-ground)">
                 <h6 class="mt-0 mb-3"><i class="pi pi-user-plus mr-2" style="color:#1976d2"></i>Novo Usuário</h6>
                 <div class="grid p-fluid">
-                    <div class="col-12 md:col-6"><div class="field"><label>Nome</label><InputText v-model="formUser.name" /></div></div>
-                    <div class="col-12 md:col-6"><div class="field"><label>Perfil</label>
+                    <div class="col-12 md:col-8"><div class="field"><label>Nome</label><InputText v-model="formUser.name" /></div></div>
+                    <div class="col-12 md:col-4"><div class="field"><label>Perfil</label>
                         <Dropdown v-model="formUser.role" :options="[{label:'Admin',value:'admin'},{label:'Usuário',value:'user'}]" optionLabel="label" optionValue="value" /></div></div>
                     <div class="col-12 md:col-6"><div class="field"><label>E-mail</label><InputText v-model="formUser.email" /></div></div>
-                    <div class="col-12 md:col-6"><div class="field mb-0"><label>Senha</label><Password v-model="formUser.password" :feedback="false" toggleMask /></div></div>
+                    <div class="col-12 md:col-6"><div class="field"><label>CPF <span class="p-error">*</span></label><InputMask v-model="formUser.cpf" mask="999.999.999-99" placeholder="000.000.000-00" /></div></div>
+                    <div class="col-12"><div class="field mb-0"><label>Senha</label><Password v-model="formUser.password" :feedback="false" toggleMask /></div></div>
                 </div>
                 <div class="flex justify-content-end gap-2 mt-3">
                     <Button label="Cancelar" class="p-button-text" size="small" @click="formUser.visivel = false" />
@@ -201,16 +207,16 @@ const acessando = ref(null);
 const dialogUsuarios = ref(false); const atleticaSelecionada = ref(null);
 const usuarios = ref([]); const carregandoUsuarios = ref(false); const salvandoUser = ref(false);
 
-const form  = reactive({ name:'', slug:'', email:'', phone:'', university_id:null, description:'', plan:'basic', admin_name:'', admin_email:'', admin_password:'', _id:null });
-const erros = reactive({ name:'', slug:'', university_id:'', admin_name:'', admin_email:'', admin_password:'' });
-const formUser = reactive({ visivel:false, name:'', email:'', password:'', role:'admin' });
+const form  = reactive({ name:'', slug:'', email:'', phone:'', university_id:null, description:'', plan:'basic', admin_name:'', admin_email:'', admin_cpf:'', admin_password:'', _id:null });
+const erros = reactive({ name:'', slug:'', university_id:'', admin_name:'', admin_email:'', admin_cpf:'', admin_password:'' });
+const formUser = reactive({ visivel:false, name:'', email:'', cpf:'', password:'', role:'admin' });
 
 function gerarSlug() {
     if (!editando.value) form.slug = form.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 }
 function limpar() {
-    Object.assign(form, { name:'', slug:'', email:'', phone:'', university_id:null, description:'', plan:'basic', admin_name:'', admin_email:'', admin_password:'', _id:null });
-    Object.assign(erros, { name:'', slug:'', university_id:'', admin_name:'', admin_email:'', admin_password:'' });
+    Object.assign(form, { name:'', slug:'', email:'', phone:'', university_id:null, description:'', plan:'basic', admin_name:'', admin_email:'', admin_cpf:'', admin_password:'', _id:null });
+    Object.assign(erros, { name:'', slug:'', university_id:'', admin_name:'', admin_email:'', admin_cpf:'', admin_password:'' });
 }
 function abrirNova()  { editando.value = false; limpar(); dialog.value = true; }
 function abrirEdicao(a) {
@@ -220,7 +226,7 @@ function abrirEdicao(a) {
 }
 
 async function salvar() {
-    Object.assign(erros, { name:'', slug:'', university_id:'', admin_name:'', admin_email:'', admin_password:'' });
+    Object.assign(erros, { name:'', slug:'', university_id:'', admin_name:'', admin_email:'', admin_cpf:'', admin_password:'' });
     salvando.value = true;
     try {
         if (editando.value) await api.put(`/super-admin/atleticas/${form._id}`, form);
@@ -256,7 +262,7 @@ async function abrirUsuarios(a) {
     try { const { data } = await api.get(`/super-admin/atleticas/${a.id}/users`); usuarios.value = data; }
     finally { carregandoUsuarios.value = false; }
 }
-function abrirNovoUsuario() { Object.assign(formUser, { name:'', email:'', password:'', role:'admin' }); formUser.visivel = true; }
+function abrirNovoUsuario() { Object.assign(formUser, { name:'', email:'', cpf:'', password:'', role:'admin' }); formUser.visivel = true; }
 async function criarUsuario() {
     salvandoUser.value = true;
     try {

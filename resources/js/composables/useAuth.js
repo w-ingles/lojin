@@ -24,8 +24,8 @@ export function useAuth() {
         syncTenantSlug(data.user);
     }
 
-    async function register(name, email, password) {
-        const { data } = await api.post('/auth/register', { name, email, password });
+    async function register(name, email, cpf, password) {
+        const { data } = await api.post('/auth/register', { name, email, cpf, password });
         token.value = data.token;
         user.value  = data.user;
         localStorage.setItem('auth_token', data.token);

@@ -90,7 +90,6 @@ Route::middleware(['auth:sanctum','admin'])->prefix('admin')->group(function () 
     Route::get('/reports/export', [Admin\ReportController::class, 'exportar']);
 
     Route::get('/comissarios',                              [Admin\CommissionerController::class, 'index']);
-    Route::get('/comissarios/buscar-usuario',               [Admin\CommissionerController::class, 'buscarUsuario']);
     Route::post('/comissarios',                             [Admin\CommissionerController::class, 'store']);
     Route::put('/comissarios/{commissioner}',               [Admin\CommissionerController::class, 'update']);
     Route::delete('/comissarios/{commissioner}',            [Admin\CommissionerController::class, 'destroy']);
