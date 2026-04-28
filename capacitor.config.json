@@ -1,0 +1,13 @@
+{
+  "appId": "com.lojin.app",
+  "appName": "Lojin",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "BarcodeScanner": {
+      "camera": true
+    }
+  }
+}

@@ -1,9 +1,17 @@
 import axios from 'axios';
 
+// Em build mobile (VITE_API_URL definido), usa URL absoluta do servidor.
+// Em build web, usa path relativo (o Laravel serve /api).
+const baseURL = import.meta.env.VITE_API_URL
+    ? `${import.meta.env.VITE_API_URL}/api`
+    : '/api';
+
 const api = axios.create({
-    baseURL: '/api',
+    baseURL,
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    withCredentials: true,
+    // withCredentials só é necessário para autenticação por cookie (Sanctum stateful).
+    // Este projeto usa tokens Bearer, mas mantemos true para compatibilidade web.
+    withCredentials: !import.meta.env.VITE_API_URL,
 });
 
 api.interceptors.request.use((config) => {
@@ -23,6 +31,8 @@ api.interceptors.response.use(
         if (err.response?.status === 401) {
             localStorage.removeItem('auth_token');
             localStorage.removeItem('auth_user');
+            // Funciona tanto em web quanto em Capacitor (androidScheme: https
+            // faz capacitor://localhost se comportar como servidor real)
             window.location.href = '/login';
         }
         return Promise.reject(err);

@@ -4,9 +4,17 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "start": "concurrently --kill-others-on-fail \"php artisan serve\" \"vite\""
+        "start": "concurrently --kill-others-on-fail \"php artisan serve\" \"vite\"",
+        "build:mobile": "vite build --config vite.config.mobile.js --mode mobile",
+        "cap:sync": "npm run build:mobile && cap sync",
+        "cap:android": "npm run cap:sync && cap open android",
+        "cap:ios": "npm run cap:sync && cap open ios"
     },
     "dependencies": {
+        "@capacitor-community/barcode-scanner": "^4.0.1",
+        "@capacitor/android": "^5.7.8",
+        "@capacitor/core": "^5.7.8",
+        "@capacitor/ios": "^5.7.8",
         "@fullcalendar/core": "^5.7.2",
         "@fullcalendar/daygrid": "^5.7.2",
         "@fullcalendar/interaction": "^5.7.2",
@@ -24,10 +32,12 @@
         "vue-router": "^4.1.6"
     },
     "devDependencies": {
+        "@capacitor/cli": "^5.7.8",
         "@vitejs/plugin-vue": "^6.0.0",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^3.0.0",
         "sass": "^1.54.4",
-        "vite": "^8.0.0"
+        "vite": "^8.0.0",
+        "vite-plugin-static-copy": "^4.1.0"
     }
 }

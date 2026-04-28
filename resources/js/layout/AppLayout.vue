@@ -103,8 +103,9 @@ export default {
                     { label: 'Eventos',    icon: 'pi pi-fw pi-calendar',   to: '/admin/eventos' },
                     { label: 'Produtos',   icon: 'pi pi-fw pi-tag',        to: '/admin/produtos' },
                     { label: 'Pedidos',      icon: 'pi pi-fw pi-list',         to: '/admin/pedidos' },
-                    { label: 'Comissários', icon: 'pi pi-fw pi-users',       to: '/admin/comissarios' },
-                    { label: 'Relatórios',  icon: 'pi pi-fw pi-chart-bar',   to: '/admin/relatorios' },
+                    { label: 'Comissários',      icon: 'pi pi-fw pi-users',      to: '/admin/comissarios' },
+                    { label: 'Validar Ingresso', icon: 'pi pi-fw pi-qrcode',    to: '/admin/validar' },
+                    { label: 'Relatórios',       icon: 'pi pi-fw pi-chart-bar', to: '/admin/relatorios' },
                     ...(slug ? [{ label: 'Ver Loja', icon: 'pi pi-fw pi-external-link', to: `/c/${slug}` }] : []),
                 ],
             }];

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Admin;
+use App\Http\Controllers\Api\Admin\TicketValidationController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Store;
 use App\Http\Controllers\Api\SuperAdmin\TenantController;
@@ -90,6 +91,8 @@ Route::middleware(['auth:sanctum','admin'])->prefix('admin')->group(function () 
 
     Route::get('/reports/sales',  [Admin\ReportController::class, 'vendas']);
     Route::get('/reports/export', [Admin\ReportController::class, 'exportar']);
+
+    Route::post('/tickets/validate', [TicketValidationController::class, 'validate']);
 
     Route::get('/comissarios',                              [Admin\CommissionerController::class, 'index']);
     Route::post('/comissarios',                             [Admin\CommissionerController::class, 'store']);
