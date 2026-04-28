@@ -27,10 +27,14 @@
                     <div class="field mb-0">
                         <label class="font-medium text-sm">Universidade</label>
                         <Dropdown
-                            v-model="filtros.university"
+                            v-model="filtros.university_id"
                             :options="universidades"
+                            optionLabel="name"
+                            optionValue="id"
                             placeholder="Todas as universidades"
                             showClear
+                            filter
+                            filterPlaceholder="Buscar..."
                             class="w-full"
                             @change="carregarAtleticas(1)"
                         />
@@ -66,12 +70,12 @@
             <i class="pi pi-building text-7xl text-color-secondary mb-4 block"></i>
             <h3 class="text-color-secondary mb-2">Nenhuma atlética encontrada</h3>
             <p class="text-color-secondary">
-                {{ filtros.search || filtros.university
+                {{ filtros.search || filtros.university_id
                     ? 'Tente outros filtros de busca.'
                     : 'Ainda não há atléticas cadastradas na plataforma.' }}
             </p>
             <Button
-                v-if="filtros.search || filtros.university"
+                v-if="filtros.search || filtros.university_id"
                 label="Limpar filtros"
                 icon="pi pi-filter-slash"
                 class="p-button-text mt-2"
@@ -109,7 +113,9 @@
 
                         <div v-if="atletica.university" class="flex align-items-center gap-1 mb-2">
                             <i class="pi pi-building text-sm text-color-secondary"></i>
-                            <small class="text-color-secondary">{{ atletica.university }}</small>
+                            <small class="text-color-secondary">
+                                {{ atletica.university.acronym ?? atletica.university.name }}
+                            </small>
                         </div>
 
                         <p
@@ -166,7 +172,7 @@ const universidades = ref([]);
 const loading       = ref(false);
 const paginacao     = ref({ current_page: 1, last_page: 1, per_page: 24, total: 0 });
 
-const filtros = reactive({ search: '', university: null });
+const filtros = reactive({ search: '', university_id: null });
 let   searchTimer = null;
 
 function abrirLoja(slug) {
@@ -179,8 +185,8 @@ function buscar() {
 }
 
 function limparFiltros() {
-    filtros.search     = '';
-    filtros.university = null;
+    filtros.search      = '';
+    filtros.university_id = null;
     carregarAtleticas(1);
 }
 
@@ -188,8 +194,8 @@ async function carregarAtleticas(page = 1) {
     loading.value = true;
     try {
         const params = { page };
-        if (filtros.search.trim())  params.search     = filtros.search.trim();
-        if (filtros.university)     params.university  = filtros.university;
+        if (filtros.search.trim())    params.search       = filtros.search.trim();
+        if (filtros.university_id)    params.university_id = filtros.university_id;
 
         const { data } = await api.get('/catalogo', { params });
         atleticas.value = data.data;

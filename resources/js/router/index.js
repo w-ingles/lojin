@@ -39,9 +39,11 @@ const routes = [
         component: AppLayout,
         meta: { requiresAuth: true, requiresSuperAdmin: true },
         children: [
-            { path: '',          name: 'super-dashboard', component: () => import('@/views/superadmin/SuperAdminDashboard.vue'),
+            { path: '',               name: 'super-dashboard',      component: () => import('@/views/superadmin/SuperAdminDashboard.vue'),
               meta: { breadcrumb: [{ parent: 'Super Admin', label: 'Dashboard' }] } },
-            { path: 'atleticas', name: 'super-atleticas', component: () => import('@/views/superadmin/SuperAdminAtleticas.vue'),
+            { path: 'universidades',  name: 'super-universidades',  component: () => import('@/views/superadmin/SuperAdminUniversidades.vue'),
+              meta: { breadcrumb: [{ parent: 'Super Admin', label: 'Universidades' }] } },
+            { path: 'atleticas',      name: 'super-atleticas',      component: () => import('@/views/superadmin/SuperAdminAtleticas.vue'),
               meta: { breadcrumb: [{ parent: 'Super Admin', label: 'Atléticas' }] } },
         ],
     },

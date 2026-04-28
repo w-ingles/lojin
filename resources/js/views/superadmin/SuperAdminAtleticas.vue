@@ -17,7 +17,15 @@
                     <Column field="id" header="ID" style="width:60px" />
                     <Column field="name" header="Atlética" sortable />
                     <Column field="slug" header="Slug"><template #body="{ data }"><code class="text-sm">{{ data.slug }}</code></template></Column>
-                    <Column field="university" header="Universidade" />
+                    <Column header="Universidade">
+                        <template #body="{ data }">
+                            <span v-if="data.university">
+                                {{ data.university.name }}
+                                <span v-if="data.university.acronym" class="text-color-secondary text-sm ml-1">({{ data.university.acronym }})</span>
+                            </span>
+                            <span v-else class="text-color-secondary text-sm">—</span>
+                        </template>
+                    </Column>
                     <Column field="plan" header="Plano" style="width:100px">
                         <template #body="{ data }"><Tag :value="data.plan" :severity="data.plan === 'premium' ? 'warning' : 'info'" /></template>
                     </Column>
@@ -76,7 +84,25 @@
                     </div>
                 </div>
                 <div class="col-12 md:col-6">
-                    <div class="field"><label>Universidade</label><InputText v-model="form.university" /></div>
+                    <div class="field">
+                        <label>Universidade <span class="p-error">*</span></label>
+                        <Dropdown
+                            v-model="form.university_id"
+                            :options="universidades"
+                            optionLabel="name"
+                            optionValue="id"
+                            placeholder="Selecione a universidade"
+                            filter
+                            filterPlaceholder="Buscar..."
+                            :class="{ 'p-invalid': erros.university_id }"
+                            class="w-full"
+                        >
+                            <template #option="{ option }">
+                                <span>{{ option.name }}<span v-if="option.acronym" class="text-color-secondary ml-1 text-sm">({{ option.acronym }})</span></span>
+                            </template>
+                        </Dropdown>
+                        <small class="p-error">{{ erros.university_id }}</small>
+                    </div>
                 </div>
                 <div class="col-12 md:col-6">
                     <div class="field"><label>E-mail</label><InputText v-model="form.email" /></div>
@@ -168,32 +194,33 @@ const route   = useRoute();
 const confirm = useConfirm();
 const toast   = useToast();
 
-const atleticas = ref([]); const loading = ref(false);
+const atleticas     = ref([]); const loading = ref(false);
+const universidades = ref([]);
 const dialog = ref(false); const editando = ref(false); const salvando = ref(false);
 const acessando = ref(null);
 const dialogUsuarios = ref(false); const atleticaSelecionada = ref(null);
 const usuarios = ref([]); const carregandoUsuarios = ref(false); const salvandoUser = ref(false);
 
-const form  = reactive({ name:'', slug:'', email:'', phone:'', university:'', description:'', plan:'basic', admin_name:'', admin_email:'', admin_password:'', _id:null });
-const erros = reactive({ name:'', slug:'', admin_name:'', admin_email:'', admin_password:'' });
+const form  = reactive({ name:'', slug:'', email:'', phone:'', university_id:null, description:'', plan:'basic', admin_name:'', admin_email:'', admin_password:'', _id:null });
+const erros = reactive({ name:'', slug:'', university_id:'', admin_name:'', admin_email:'', admin_password:'' });
 const formUser = reactive({ visivel:false, name:'', email:'', password:'', role:'admin' });
 
 function gerarSlug() {
     if (!editando.value) form.slug = form.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 }
 function limpar() {
-    Object.assign(form, { name:'', slug:'', email:'', phone:'', university:'', description:'', plan:'basic', admin_name:'', admin_email:'', admin_password:'', _id:null });
-    Object.assign(erros, { name:'', slug:'', admin_name:'', admin_email:'', admin_password:'' });
+    Object.assign(form, { name:'', slug:'', email:'', phone:'', university_id:null, description:'', plan:'basic', admin_name:'', admin_email:'', admin_password:'', _id:null });
+    Object.assign(erros, { name:'', slug:'', university_id:'', admin_name:'', admin_email:'', admin_password:'' });
 }
 function abrirNova()  { editando.value = false; limpar(); dialog.value = true; }
 function abrirEdicao(a) {
     editando.value = true; limpar();
-    Object.assign(form, { _id:a.id, name:a.name, slug:a.slug, email:a.email??'', phone:a.phone??'', university:a.university??'', description:a.description??'', plan:a.plan });
+    Object.assign(form, { _id:a.id, name:a.name, slug:a.slug, email:a.email??'', phone:a.phone??'', university_id:a.university_id??null, description:a.description??'', plan:a.plan });
     dialog.value = true;
 }
 
 async function salvar() {
-    Object.assign(erros, { name:'', slug:'', admin_name:'', admin_email:'', admin_password:'' });
+    Object.assign(erros, { name:'', slug:'', university_id:'', admin_name:'', admin_email:'', admin_password:'' });
     salvando.value = true;
     try {
         if (editando.value) await api.put(`/super-admin/atleticas/${form._id}`, form);
@@ -256,5 +283,10 @@ async function carregar() {
     finally { loading.value = false; }
 }
 
-onMounted(() => { carregar(); if (route.query.novo) abrirNova(); });
+async function carregarUniversidades() {
+    try { const { data } = await api.get('/super-admin/universidades', { params: { per_page: 200 } }); universidades.value = data.data; }
+    catch {}
+}
+
+onMounted(() => { carregar(); carregarUniversidades(); if (route.query.novo) abrirNova(); });
 </script>

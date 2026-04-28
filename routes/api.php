@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Store;
 use App\Http\Controllers\Api\SuperAdmin\TenantController;
+use App\Http\Controllers\Api\SuperAdmin\UniversityController;
 use Illuminate\Support\Facades\Route;
 
 // ── Autenticação ──────────────────────────────────────────────────────────────
@@ -18,12 +19,13 @@ Route::middleware('auth:sanctum')->group(function () {
 // ── Catálogo público de atléticas ────────────────────────────────────────────
 Route::get('/catalogo', function (\Illuminate\Http\Request $request) {
     $query = \App\Models\Tenant::where('is_active', true)
+        ->with('university:id,name,acronym')
         ->withCount(['events' => fn ($q) => $q->where('status', 'active')])
         ->when($request->filled('search'), fn ($q) =>
             $q->where('name', 'like', '%' . $request->string('search') . '%')
         )
-        ->when($request->filled('university'), fn ($q) =>
-            $q->where('university', $request->string('university'))
+        ->when($request->filled('university_id'), fn ($q) =>
+            $q->where('university_id', $request->integer('university_id'))
         )
         ->orderBy('name');
 
@@ -31,18 +33,18 @@ Route::get('/catalogo', function (\Illuminate\Http\Request $request) {
 });
 
 Route::get('/catalogo/universidades', function () {
-    $unis = \App\Models\Tenant::where('is_active', true)
-        ->whereNotNull('university')
-        ->distinct()
-        ->orderBy('university')
-        ->pluck('university');
-    return response()->json($unis);
+    return response()->json(
+        \App\Models\University::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'acronym'])
+    );
 });
 
 // ── Info pública da atlética ──────────────────────────────────────────────────
 Route::get('/atletica/{slug}', function (string $slug) {
     $tenant = \App\Models\Tenant::where('slug', $slug)->where('is_active', true)
-        ->select('id','name','slug','university','description')->first();
+        ->with('university:id,name,acronym')
+        ->select('id','name','slug','university_id','description')->first();
     abort_unless($tenant, 404, 'Atlética não encontrada.');
     return response()->json($tenant);
 });
@@ -97,4 +99,9 @@ Route::middleware(['auth:sanctum','super_admin'])->prefix('super-admin')->group(
     Route::get('/atleticas/{tenant}/users',           [TenantController::class, 'usuarios']);
     Route::post('/atleticas/{tenant}/users',          [TenantController::class, 'criarUsuario']);
     Route::delete('/atleticas/{tenant}/users/{user}', [TenantController::class, 'excluirUsuario']);
+
+    Route::get('/universidades',                      [UniversityController::class, 'index']);
+    Route::post('/universidades',                     [UniversityController::class, 'store']);
+    Route::put('/universidades/{university}',         [UniversityController::class, 'update']);
+    Route::delete('/universidades/{university}',      [UniversityController::class, 'destroy']);
 });

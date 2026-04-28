@@ -28,6 +28,7 @@ class TenantController extends Controller
     {
         return response()->json(
             Tenant::withCount(['users','orders','events'])
+                ->with('university:id,name,acronym')
                 ->latest()->get()
                 ->map(fn ($t) => [...$t->toArray(), 'faturamento' => Order::where('tenant_id',$t->id)->where('status','paid')->sum('total')])
         );
@@ -40,23 +41,26 @@ class TenantController extends Controller
             'slug'           => ['required','string','max:50','unique:tenants,slug','regex:/^[a-z0-9-]+$/'],
             'email'          => ['nullable','email'],
             'phone'          => ['nullable','string','max:20'],
-            'university'     => ['nullable','string','max:100'],
+            'university_id'  => ['required','exists:universities,id'],
             'description'    => ['nullable','string'],
             'plan'           => ['nullable','in:basic,premium'],
             'admin_name'     => ['required','string','max:100'],
             'admin_email'    => ['required','email','unique:users,email'],
             'admin_password' => ['required','string','min:8'],
+        ], [
+            'university_id.required' => 'A universidade é obrigatória.',
+            'university_id.exists'   => 'Universidade inválida ou não encontrada.',
         ]);
 
         $tenant = Tenant::create([
-            'name'       => $data['name'],
-            'slug'       => $data['slug'],
-            'email'      => $data['email'] ?? null,
-            'phone'      => $data['phone'] ?? null,
-            'university' => $data['university'] ?? null,
-            'description'=> $data['description'] ?? null,
-            'plan'       => $data['plan'] ?? 'basic',
-            'is_active'  => true,
+            'name'          => $data['name'],
+            'slug'          => $data['slug'],
+            'email'         => $data['email'] ?? null,
+            'phone'         => $data['phone'] ?? null,
+            'university_id' => $data['university_id'],
+            'description'   => $data['description'] ?? null,
+            'plan'          => $data['plan'] ?? 'basic',
+            'is_active'     => true,
         ]);
 
         User::create([
@@ -73,14 +77,17 @@ class TenantController extends Controller
     public function update(Request $request, Tenant $tenant): JsonResponse
     {
         $data = $request->validate([
-            'name'        => ['sometimes','required','string','max:100'],
-            'slug'        => ['sometimes','required','string','max:50','regex:/^[a-z0-9-]+$/', Rule::unique('tenants')->ignore($tenant->id)],
-            'email'       => ['nullable','email'],
-            'phone'       => ['nullable','string','max:20'],
-            'university'  => ['nullable','string','max:100'],
-            'description' => ['nullable','string'],
-            'plan'        => ['nullable','in:basic,premium'],
-            'is_active'   => ['sometimes','boolean'],
+            'name'          => ['sometimes','required','string','max:100'],
+            'slug'          => ['sometimes','required','string','max:50','regex:/^[a-z0-9-]+$/', Rule::unique('tenants')->ignore($tenant->id)],
+            'email'         => ['nullable','email'],
+            'phone'         => ['nullable','string','max:20'],
+            'university_id' => ['required','exists:universities,id'],
+            'description'   => ['nullable','string'],
+            'plan'          => ['nullable','in:basic,premium'],
+            'is_active'     => ['sometimes','boolean'],
+        ], [
+            'university_id.required' => 'A universidade é obrigatória.',
+            'university_id.exists'   => 'Universidade inválida ou não encontrada.',
         ]);
 
         $tenant->update($data);

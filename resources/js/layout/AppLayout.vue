@@ -89,8 +89,9 @@ export default {
                 label: 'Super Admin',
                 icon: 'pi pi-fw pi-shield',
                 items: [
-                    { label: 'Dashboard',  icon: 'pi pi-fw pi-home',     to: '/super-admin' },
-                    { label: 'Atléticas',  icon: 'pi pi-fw pi-building', to: '/super-admin/atleticas' },
+                    { label: 'Dashboard',      icon: 'pi pi-fw pi-home',        to: '/super-admin' },
+                    { label: 'Universidades',  icon: 'pi pi-fw pi-graduation-cap', to: '/super-admin/universidades' },
+                    { label: 'Atléticas',      icon: 'pi pi-fw pi-building',    to: '/super-admin/atleticas' },
                 ],
             }];
         } else {
