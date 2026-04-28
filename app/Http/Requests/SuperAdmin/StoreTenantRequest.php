@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 namespace App\Http\Requests\SuperAdmin;
 use App\Rules\CpfRule;
 use Illuminate\Foundation\Http\FormRequest;

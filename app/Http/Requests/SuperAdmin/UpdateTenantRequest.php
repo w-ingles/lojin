@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 namespace App\Http\Requests\SuperAdmin;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;

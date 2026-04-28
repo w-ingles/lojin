@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 namespace App\Http\Requests\Store;
 use App\Models\Commissioner;
 use App\Rules\CpfRule;
