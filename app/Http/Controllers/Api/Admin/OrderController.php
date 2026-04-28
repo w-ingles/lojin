@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Http\Controllers\Api\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class OrderController extends Controller
+{
+    public function index(Request $request): JsonResponse
+    {
+        $orders = Order::with('items')
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
+            ->when($request->filled('search'), fn ($q) =>
+                $q->where('customer_name','like','%'.$request->string('search').'%')
+                  ->orWhere('customer_email','like','%'.$request->string('search').'%')
+            )
+            ->latest()
+            ->paginate(20);
+
+        return response()->json($orders);
+    }
+
+    public function show(Order $order): JsonResponse
+    {
+        return response()->json($order->load(['items','items.tickets','user']));
+    }
+
+    public function updateStatus(Request $request, Order $order): JsonResponse
+    {
+        $data = $request->validate(['status' => ['required','in:pending,paid,cancelled,refunded']]);
+
+        if ($data['status'] === 'paid') {
+            $order->markAsPaid();
+        } else {
+            $order->update($data);
+        }
+
+        return response()->json($order->fresh());
+    }
+}

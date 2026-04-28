@@ -1,0 +1,100 @@
+<?php
+
+use App\Http\Controllers\Api\Admin;
+use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\Store;
+use App\Http\Controllers\Api\SuperAdmin\TenantController;
+use Illuminate\Support\Facades\Route;
+
+// ── Autenticação ──────────────────────────────────────────────────────────────
+Route::post('/auth/register', [AuthController::class, 'register']);
+Route::post('/auth/login',    [AuthController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::get('/auth/me',      [AuthController::class, 'me']);
+});
+
+// ── Catálogo público de atléticas ────────────────────────────────────────────
+Route::get('/catalogo', function (\Illuminate\Http\Request $request) {
+    $query = \App\Models\Tenant::where('is_active', true)
+        ->withCount(['events' => fn ($q) => $q->where('status', 'active')])
+        ->when($request->filled('search'), fn ($q) =>
+            $q->where('name', 'like', '%' . $request->string('search') . '%')
+        )
+        ->when($request->filled('university'), fn ($q) =>
+            $q->where('university', $request->string('university'))
+        )
+        ->orderBy('name');
+
+    return response()->json($query->paginate(24));
+});
+
+Route::get('/catalogo/universidades', function () {
+    $unis = \App\Models\Tenant::where('is_active', true)
+        ->whereNotNull('university')
+        ->distinct()
+        ->orderBy('university')
+        ->pluck('university');
+    return response()->json($unis);
+});
+
+// ── Info pública da atlética ──────────────────────────────────────────────────
+Route::get('/atletica/{slug}', function (string $slug) {
+    $tenant = \App\Models\Tenant::where('slug', $slug)->where('is_active', true)
+        ->select('id','name','slug','university','description')->first();
+    abort_unless($tenant, 404, 'Atlética não encontrada.');
+    return response()->json($tenant);
+});
+
+// ── Loja pública (requer tenant via X-Tenant-Slug) ────────────────────────────
+Route::middleware('require.tenant')->group(function () {
+    Route::get('/events',             [Store\EventController::class, 'index']);
+    Route::get('/events/{event}',     [Store\EventController::class, 'show']);
+    Route::get('/products',           [Store\ProductController::class, 'index']);
+    Route::get('/products/{product}', [Store\ProductController::class, 'show']);
+    Route::get('/orders/{id}',        [Store\OrderController::class, 'show']);
+    Route::post('/orders',            [Store\OrderController::class, 'store']);
+});
+
+// ── Usuário logado ────────────────────────────────────────────────────────────
+Route::middleware(['auth:sanctum','require.tenant'])->group(function () {
+    Route::get('/my-orders',  [Store\OrderController::class, 'myOrders']);
+    Route::get('/my-tickets', [Store\OrderController::class, 'meusIngressos']);
+});
+
+// ── Admin da atlética ─────────────────────────────────────────────────────────
+Route::middleware(['auth:sanctum','admin'])->prefix('admin')->group(function () {
+    Route::get('/dashboard', [Admin\DashboardController::class, 'index']);
+
+    Route::apiResource('events', Admin\EventController::class);
+    Route::apiResource('events.batches', Admin\TicketBatchController::class)
+        ->only(['store','update','destroy'])->shallow();
+
+    Route::get('/products',              [Admin\ProductController::class, 'index']);
+    Route::post('/products',             [Admin\ProductController::class, 'store']);
+    Route::post('/products/{product}',   [Admin\ProductController::class, 'update']);
+    Route::delete('/products/{product}', [Admin\ProductController::class, 'destroy']);
+    Route::get('/categories',            [Admin\ProductController::class, 'categories']);
+    Route::post('/categories',           [Admin\ProductController::class, 'storeCategory']);
+
+    Route::get('/orders',                  [Admin\OrderController::class, 'index']);
+    Route::get('/orders/{order}',          [Admin\OrderController::class, 'show']);
+    Route::patch('/orders/{order}/status', [Admin\OrderController::class, 'updateStatus']);
+
+    Route::get('/reports/sales',  [Admin\ReportController::class, 'vendas']);
+    Route::get('/reports/export', [Admin\ReportController::class, 'exportar']);
+});
+
+// ── Super Admin ───────────────────────────────────────────────────────────────
+Route::middleware(['auth:sanctum','super_admin'])->prefix('super-admin')->group(function () {
+    Route::get('/overview',                           [TenantController::class, 'overview']);
+    Route::get('/atleticas',                          [TenantController::class, 'index']);
+    Route::post('/atleticas',                         [TenantController::class, 'store']);
+    Route::put('/atleticas/{tenant}',                 [TenantController::class, 'update']);
+    Route::patch('/atleticas/{tenant}/toggle',        [TenantController::class, 'toggleAtivo']);
+    Route::post('/atleticas/{tenant}/impersonate',    [TenantController::class, 'impersonate']);
+    Route::get('/atleticas/{tenant}/users',           [TenantController::class, 'usuarios']);
+    Route::post('/atleticas/{tenant}/users',          [TenantController::class, 'criarUsuario']);
+    Route::delete('/atleticas/{tenant}/users/{user}', [TenantController::class, 'excluirUsuario']);
+});
