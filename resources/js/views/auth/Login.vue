@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="flex align-items-center justify-content-center min-h-screen" style="background:#f5f5f5">
         <div class="card" style="width:100%;max-width:420px">
             <div class="text-center mb-4">
@@ -9,8 +9,9 @@
 
             <div class="p-fluid">
                 <div class="field">
-                    <label>E-mail</label>
-                    <InputText v-model="form.email" type="email" @keyup.enter="login"
+                    <label>E-mail ou CPF</label>
+                    <InputText v-model="form.identifier" @keyup.enter="login"
+                        placeholder="email@exemplo.com ou 000.000.000-00"
                         :class="{ 'p-invalid': erro }" />
                 </div>
                 <div class="field">
@@ -40,7 +41,7 @@ const router = useRouter();
 const route  = useRoute();
 const { login: authLogin, isAdmin, isSuperAdmin } = useAuth();
 
-const form    = reactive({ email:'', password:'' });
+const form    = reactive({ identifier: '', password: '' });
 const loading = ref(false);
 const erro    = ref('');
 
@@ -48,14 +49,14 @@ async function login() {
     erro.value = '';
     loading.value = true;
     try {
-        await authLogin(form.email, form.password);
+        await authLogin(form.identifier, form.password);
         const redirect = route.query.redirect;
         if (redirect) { router.push(redirect); return; }
-        if (isSuperAdmin.value)      router.push('/super-admin');
-        else if (isAdmin.value)      router.push('/admin');
-        else                         router.push('/');
+        if (isSuperAdmin.value)  router.push('/super-admin');
+        else if (isAdmin.value)  router.push('/admin');
+        else                     router.push('/');
     } catch {
-        erro.value = 'E-mail ou senha inválidos.';
+        erro.value = 'E-mail, CPF ou senha inválidos.';
     } finally { loading.value = false; }
 }
 </script>

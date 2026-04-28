@@ -9,8 +9,10 @@ use App\Http\Controllers\Api\SuperAdmin\CommissionerController as SuperAdminComm
 use Illuminate\Support\Facades\Route;
 
 // ── Autenticação ──────────────────────────────────────────────────────────────
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/login',    [AuthController::class, 'login']);
+Route::post('/auth/pre-register',     [AuthController::class, 'preRegister']);
+Route::post('/auth/confirm-register', [AuthController::class, 'confirmRegister']);
+Route::post('/auth/resend-code',      [AuthController::class, 'resendCode']);
+Route::post('/auth/login',            [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);

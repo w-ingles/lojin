@@ -15,8 +15,8 @@ export function useAuth() {
         else      localStorage.removeItem('idealfood_tenant_slug');
     }
 
-    async function login(email, password) {
-        const { data } = await api.post('/auth/login', { email, password });
+    async function login(identifier, password) {
+        const { data } = await api.post('/auth/login', { identifier, password });
         token.value = data.token;
         user.value  = data.user;
         localStorage.setItem('auth_token', data.token);
@@ -24,8 +24,7 @@ export function useAuth() {
         syncTenantSlug(data.user);
     }
 
-    async function register(name, email, cpf, password) {
-        const { data } = await api.post('/auth/register', { name, email, cpf, password });
+    function setSession(data) {
         token.value = data.token;
         user.value  = data.user;
         localStorage.setItem('auth_token', data.token);
@@ -54,5 +53,5 @@ export function useAuth() {
         }
     }
 
-    return { user, token, isAuthenticated, isAdmin, isSuperAdmin, login, register, logout, checkAuth };
+    return { user, token, isAuthenticated, isAdmin, isSuperAdmin, login, setSession, logout, checkAuth };
 }
