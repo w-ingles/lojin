@@ -1,8 +1,7 @@
-<?php
-
+﻿<?php
 namespace App\Http\Controllers\Api\Admin;
-
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Models\Order;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,9 +16,7 @@ class OrderController extends Controller
                 $q->where('customer_name','like','%'.$request->string('search').'%')
                   ->orWhere('customer_email','like','%'.$request->string('search').'%')
             )
-            ->latest()
-            ->paginate(20);
-
+            ->latest()->paginate(20);
         return response()->json($orders);
     }
 
@@ -28,16 +25,14 @@ class OrderController extends Controller
         return response()->json($order->load(['items','items.tickets','user']));
     }
 
-    public function updateStatus(Request $request, Order $order): JsonResponse
+    public function updateStatus(UpdateOrderStatusRequest $request, Order $order): JsonResponse
     {
-        $data = $request->validate(['status' => ['required','in:pending,paid,cancelled,refunded']]);
-
+        $data = $request->validated();
         if ($data['status'] === 'paid') {
             $order->markAsPaid();
         } else {
             $order->update($data);
         }
-
         return response()->json($order->fresh());
     }
 }

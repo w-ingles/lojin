@@ -1,12 +1,11 @@
 ﻿<?php
-
 namespace App\Http\Controllers\Api\Admin;
-
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreCommissionerRequest;
+use App\Http\Requests\Admin\UpdateCommissionerRequest;
 use App\Models\Commissioner;
 use App\Models\Order;
 use App\Models\User;
-use App\Rules\CpfRule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -30,15 +29,9 @@ class CommissionerController extends Controller
         return response()->json($query->paginate(15));
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreCommissionerRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'cpf' => ['required', 'string', new CpfRule()],
-        ], [
-            'cpf.required' => 'Informe o CPF da pessoa.',
-        ]);
-
-        $cpf  = preg_replace('/\D/', '', $data['cpf']);
+        $cpf  = preg_replace('/\D/', '', $request->cpf);
         $user = User::where('cpf', $cpf)->first();
 
         if (!$user) {
@@ -49,27 +42,16 @@ class CommissionerController extends Controller
         }
 
         if (Commissioner::where('user_id', $user->id)->exists()) {
-            return response()->json([
-                'message' => "O usuário \"{$user->name}\" já é comissário desta atlética.",
-            ], 422);
+            return response()->json(['message' => "O usuário \"{$user->name}\" já é comissário desta atlética."], 422);
         }
 
-        $commissioner = Commissioner::create([
-            'user_id'   => $user->id,
-            'is_active' => true,
-        ]);
-
+        $commissioner = Commissioner::create(['user_id' => $user->id, 'is_active' => true]);
         return response()->json($commissioner->load('user:id,name,email,cpf')->loadCount('orders'), 201);
     }
 
-    public function update(Request $request, Commissioner $commissioner): JsonResponse
+    public function update(UpdateCommissionerRequest $request, Commissioner $commissioner): JsonResponse
     {
-        $data = $request->validate([
-            'is_active' => ['sometimes', 'boolean'],
-            'notes'     => ['nullable', 'string', 'max:500'],
-        ]);
-
-        $commissioner->update($data);
+        $commissioner->update($request->validated());
         return response()->json($commissioner->load('user:id,name,email,cpf')->loadCount('orders'));
     }
 
@@ -82,10 +64,7 @@ class CommissionerController extends Controller
     public function vendas(Request $request, Commissioner $commissioner): JsonResponse
     {
         $orders = Order::where('commissioner_id', $commissioner->id)
-            ->with('items')
-            ->latest()
-            ->paginate(10);
-
+            ->with('items')->latest()->paginate(10);
         return response()->json($orders);
     }
 }

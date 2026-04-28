@@ -1,16 +1,15 @@
-<?php
-
+﻿<?php
 namespace App\Http\Controllers\Api\SuperAdmin;
-
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SuperAdmin\CreateTenantUserRequest;
+use App\Http\Requests\SuperAdmin\StoreTenantRequest;
+use App\Http\Requests\SuperAdmin\UpdateTenantRequest;
 use App\Models\Order;
 use App\Models\Tenant;
 use App\Models\User;
-use App\Rules\CpfRule;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 
 class TenantController extends Controller
 {
@@ -35,27 +34,9 @@ class TenantController extends Controller
         );
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreTenantRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'name'           => ['required','string','max:100'],
-            'slug'           => ['required','string','max:50','unique:tenants,slug','regex:/^[a-z0-9-]+$/'],
-            'email'          => ['nullable','email'],
-            'phone'          => ['nullable','string','max:20'],
-            'university_id'  => ['required','exists:universities,id'],
-            'description'    => ['nullable','string'],
-            'plan'           => ['nullable','in:basic,premium'],
-            'admin_name'     => ['required','string','max:100'],
-            'admin_email'    => ['required','email','unique:users,email'],
-            'admin_cpf'      => ['required','string', new CpfRule(), Rule::unique('users','cpf')],
-            'admin_password' => ['required','string','min:8'],
-        ], [
-            'university_id.required' => 'A universidade é obrigatória.',
-            'university_id.exists'   => 'Universidade inválida ou não encontrada.',
-            'admin_cpf.required'     => 'O CPF do administrador é obrigatório.',
-            'admin_cpf.unique'       => 'Este CPF já está cadastrado na plataforma.',
-        ]);
-
+        $data   = $request->validated();
         $tenant = Tenant::create([
             'name'          => $data['name'],
             'slug'          => $data['slug'],
@@ -79,23 +60,9 @@ class TenantController extends Controller
         return response()->json($tenant->loadCount('users'), 201);
     }
 
-    public function update(Request $request, Tenant $tenant): JsonResponse
+    public function update(UpdateTenantRequest $request, Tenant $tenant): JsonResponse
     {
-        $data = $request->validate([
-            'name'          => ['sometimes','required','string','max:100'],
-            'slug'          => ['sometimes','required','string','max:50','regex:/^[a-z0-9-]+$/', Rule::unique('tenants')->ignore($tenant->id)],
-            'email'         => ['nullable','email'],
-            'phone'         => ['nullable','string','max:20'],
-            'university_id' => ['required','exists:universities,id'],
-            'description'   => ['nullable','string'],
-            'plan'          => ['nullable','in:basic,premium'],
-            'is_active'     => ['sometimes','boolean'],
-        ], [
-            'university_id.required' => 'A universidade é obrigatória.',
-            'university_id.exists'   => 'Universidade inválida ou não encontrada.',
-        ]);
-
-        $tenant->update($data);
+        $tenant->update($request->validated());
         return response()->json($tenant);
     }
 
@@ -117,20 +84,11 @@ class TenantController extends Controller
         return response()->json(User::where('tenant_id',$tenant->id)->latest()->get());
     }
 
-    public function criarUsuario(Request $request, Tenant $tenant): JsonResponse
+    public function criarUsuario(CreateTenantUserRequest $request, Tenant $tenant): JsonResponse
     {
-        $data = $request->validate([
-            'name'     => ['required','string','max:100'],
-            'email'    => ['required','email','unique:users,email'],
-            'cpf'      => ['required','string', new CpfRule(), Rule::unique('users','cpf')],
-            'password' => ['required','string','min:8'],
-            'role'     => ['required','in:admin,user'],
-        ], [
-            'cpf.required' => 'O CPF é obrigatório.',
-            'cpf.unique'   => 'Este CPF já está cadastrado na plataforma.',
-        ]);
+        $data        = $request->validated();
         $data['cpf'] = preg_replace('/\D/', '', $data['cpf']);
-        $user = User::create([...$data, 'tenant_id' => $tenant->id, 'password' => Hash::make($data['password'])]);
+        $user        = User::create([...$data, 'tenant_id' => $tenant->id, 'password' => Hash::make($data['password'])]);
         return response()->json($user, 201);
     }
 

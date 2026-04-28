@@ -1,12 +1,12 @@
-<?php
-
+﻿<?php
 namespace App\Http\Controllers\Api\Admin;
-
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreCategoryRequest;
+use App\Http\Requests\Admin\StoreProductRequest;
+use App\Http\Requests\Admin\UpdateProductRequest;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
@@ -21,48 +21,27 @@ class ProductController extends Controller
         return response()->json(ProductCategory::orderBy('name')->get());
     }
 
-    public function storeCategory(Request $request): JsonResponse
+    public function storeCategory(StoreCategoryRequest $request): JsonResponse
     {
-        $data = $request->validate(['name' => ['required','string','max:100']]);
-        return response()->json(ProductCategory::create($data), 201);
+        return response()->json(ProductCategory::create($request->validated()), 201);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreProductRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'name'                => ['required','string','max:150'],
-            'description'         => ['nullable','string'],
-            'price'               => ['required','numeric','min:0'],
-            'stock'               => ['required','integer','min:0'],
-            'active'              => ['boolean'],
-            'product_category_id' => ['nullable','exists:product_categories,id'],
-            'image'               => ['nullable','image','max:2048'],
-        ]);
-
+        $data = $request->validated();
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('products','public');
+            $data['image'] = $request->file('image')->store('products', 'public');
         }
-
         return response()->json(Product::create($data)->load('category'), 201);
     }
 
-    public function update(Request $request, Product $product): JsonResponse
+    public function update(UpdateProductRequest $request, Product $product): JsonResponse
     {
-        $data = $request->validate([
-            'name'                => ['sometimes','required','string','max:150'],
-            'description'         => ['nullable','string'],
-            'price'               => ['sometimes','required','numeric','min:0'],
-            'stock'               => ['sometimes','required','integer','min:0'],
-            'active'              => ['boolean'],
-            'product_category_id' => ['nullable','exists:product_categories,id'],
-            'image'               => ['nullable','image','max:2048'],
-        ]);
-
+        $data = $request->validated();
         if ($request->hasFile('image')) {
             if ($product->image) Storage::disk('public')->delete($product->image);
-            $data['image'] = $request->file('image')->store('products','public');
+            $data['image'] = $request->file('image')->store('products', 'public');
         }
-
         $product->update($data);
         return response()->json($product->load('category'));
     }
