@@ -70,6 +70,8 @@ const routes = [
               meta: { breadcrumb: [{ parent: 'Gestão', label: 'Comissários' }] } },
             { path: 'validar',      name: 'admin-validar',      component: () => import('@/views/admin/AdminValidarIngresso.vue'),
               meta: { breadcrumb: [{ parent: 'Gestão', label: 'Validar Ingressos' }] } },
+            { path: 'perfil',       name: 'admin-perfil',       component: () => import('@/views/admin/AdminPerfil.vue'),
+              meta: { breadcrumb: [{ parent: 'Gestão', label: 'Perfil da Atlética' }] } },
             { path: 'relatorios',   name: 'admin-relatorios',  component: () => import('@/views/admin/AdminRelatorios.vue'),
               meta: { breadcrumb: [{ parent: 'Gestão', label: 'Relatórios' }] } },
         ],

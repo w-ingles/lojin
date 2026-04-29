@@ -94,16 +94,20 @@
                     class="atletica-card card h-full flex flex-column p-0"
                     @click="abrirLoja(atletica.slug)"
                 >
-                    <!-- Logo / banner -->
+                    <!-- Banner (imagem larga) ou fallback com logo -->
                     <div class="atletica-card-header">
-                        <img
-                            v-if="atletica.logo_url"
-                            :src="atletica.logo_url"
+                        <img v-if="atletica.banner_url"
+                            :src="atletica.banner_url"
                             :alt="atletica.name"
-                            class="atletica-logo-img"
+                            class="atletica-banner-img"
                         />
                         <div v-else class="atletica-logo-placeholder">
-                            <i class="pi pi-bolt"></i>
+                            <img v-if="atletica.logo_url"
+                                :src="atletica.logo_url"
+                                :alt="atletica.name"
+                                class="atletica-logo-small"
+                            />
+                            <i v-else class="pi pi-bolt"></i>
                         </div>
                     </div>
 
@@ -262,22 +266,28 @@ onMounted(() => {
     justify-content: center;
     overflow: hidden;
 }
-.atletica-logo-img {
+.atletica-banner-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
 }
 .atletica-logo-placeholder {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    background: rgba(255,255,255,.15);
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
 }
+.atletica-logo-small {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255,255,255,.4);
+}
 .atletica-logo-placeholder .pi {
-    font-size: 2rem;
+    font-size: 2.5rem;
     color: rgba(255,255,255,.8);
 }
 </style>

@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tenant extends Model
 {
-    protected $fillable = ['name','slug','email','phone','university_id','description','logo','plan','is_active','settings'];
+    protected $fillable = ['name','slug','email','phone','university_id','description','logo','banner','plan','is_active','settings'];
 
-    protected $appends = ['logo_url'];
+    protected $appends = ['logo_url', 'banner_url'];
 
     protected function casts(): array
     {
@@ -27,5 +27,10 @@ class Tenant extends Model
     public function getLogoUrlAttribute(): ?string
     {
         return $this->logo ? asset('storage/' . $this->logo) : null;
+    }
+
+    public function getBannerUrlAttribute(): ?string
+    {
+        return $this->banner ? asset('storage/' . $this->banner) : null;
     }
 }

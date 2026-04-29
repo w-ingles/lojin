@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Api\Admin\TicketValidationController;
+use App\Http\Controllers\Api\Admin\TenantProfileController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Store;
 use App\Http\Controllers\Api\SuperAdmin\TenantController;
@@ -93,6 +94,13 @@ Route::middleware(['auth:sanctum','admin'])->prefix('admin')->group(function () 
     Route::get('/reports/export', [Admin\ReportController::class, 'exportar']);
 
     Route::post('/tickets/validate', [TicketValidationController::class, 'validate']);
+
+    Route::get('/tenant/profile',           [TenantProfileController::class, 'show']);
+    Route::post('/tenant/profile',          [TenantProfileController::class, 'update']);
+    Route::post('/tenant/profile/banner',   [TenantProfileController::class, 'uploadBanner']);
+    Route::delete('/tenant/profile/banner', [TenantProfileController::class, 'removeBanner']);
+    Route::post('/tenant/profile/logo',     [TenantProfileController::class, 'uploadLogo']);
+    Route::delete('/tenant/profile/logo',   [TenantProfileController::class, 'removeLogo']);
 
     Route::get('/comissarios',                              [Admin\CommissionerController::class, 'index']);
     Route::post('/comissarios',                             [Admin\CommissionerController::class, 'store']);

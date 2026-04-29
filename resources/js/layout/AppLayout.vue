@@ -100,6 +100,7 @@ export default {
                 icon: 'pi pi-fw pi-bolt',
                 items: [
                     { label: 'Dashboard',  icon: 'pi pi-fw pi-home',      to: '/admin' },
+                    { label: 'Perfil',     icon: 'pi pi-fw pi-image',     to: '/admin/perfil' },
                     { label: 'Eventos',    icon: 'pi pi-fw pi-calendar',   to: '/admin/eventos' },
                     { label: 'Produtos',   icon: 'pi pi-fw pi-tag',        to: '/admin/produtos' },
                     { label: 'Pedidos',      icon: 'pi pi-fw pi-list',         to: '/admin/pedidos' },
