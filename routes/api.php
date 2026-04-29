@@ -5,6 +5,8 @@ use App\Http\Controllers\Api\Admin\TicketValidationController;
 use App\Http\Controllers\Api\Admin\TenantProfileController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Store;
+use App\Http\Controllers\Api\Store\CommissionerSalesController;
+use App\Http\Controllers\Api\Store\UserProfileController;
 use App\Http\Controllers\Api\SuperAdmin\TenantController;
 use App\Http\Controllers\Api\SuperAdmin\UniversityController;
 use App\Http\Controllers\Api\SuperAdmin\CommissionerController as SuperAdminCommissionerController;
@@ -61,14 +63,26 @@ Route::middleware('require.tenant')->group(function () {
     Route::get('/products',           [Store\ProductController::class, 'index']);
     Route::get('/products/{product}', [Store\ProductController::class, 'show']);
     Route::get('/orders/{id}',        [Store\OrderController::class, 'show']);
-    Route::post('/orders',            [Store\OrderController::class, 'store']);
 });
 
-// ── Usuário logado ────────────────────────────────────────────────────────────
-Route::middleware(['auth:sanctum','require.tenant'])->group(function () {
-    Route::get('/my-orders',          [Store\OrderController::class, 'myOrders']);
-    Route::get('/my-tickets',         [Store\OrderController::class, 'meusIngressos']);
-    Route::get('/commissioner/status',[Store\OrderController::class, 'commissionerStatus']);
+// ── Usuário logado na loja ────────────────────────────────────────────────────
+Route::middleware(['auth:sanctum', 'require.tenant'])->group(function () {
+    Route::get('/my-orders',           [Store\OrderController::class, 'myOrders']);
+    Route::get('/my-tickets',          [Store\OrderController::class, 'meusIngressos']);
+    Route::get('/commissioner/status', [Store\OrderController::class, 'commissionerStatus']);
+
+    // Perfil do usuário na loja
+    Route::get('/user/profile', [UserProfileController::class, 'show']);
+    Route::put('/user/profile', [UserProfileController::class, 'update']);
+
+    // ── Fluxo exclusivo de comissários (CPF → cliente → venda) ───────────────
+    Route::get('/commissioner/lookup',  [CommissionerSalesController::class, 'lookup']);
+    Route::post('/commissioner/orders', [CommissionerSalesController::class, 'store']);
+});
+
+// ── Checkout do usuário — exige autenticação E perfil completo ────────────────
+Route::middleware(['auth:sanctum', 'require.tenant', 'profile.complete'])->group(function () {
+    Route::post('/orders', [Store\OrderController::class, 'store']);
 });
 
 // ── Admin da atlética ─────────────────────────────────────────────────────────

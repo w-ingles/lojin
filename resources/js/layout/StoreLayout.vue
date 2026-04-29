@@ -13,11 +13,18 @@
                         <i class="pi pi-tag mr-1"></i>Produtos
                     </router-link>
                     <template v-if="isAuthenticated">
+                        <router-link v-if="isCommissioner" :to="`/c/${slug}/comissario`"
+                            class="store-nav-link commissioner-link">
+                            <i class="pi pi-shopping-bag mr-1"></i>Vender
+                        </router-link>
                         <router-link :to="`/c/${slug}/meus-ingressos`" class="store-nav-link">
                             <i class="pi pi-ticket mr-1"></i>Ingressos
                         </router-link>
                         <router-link :to="`/c/${slug}/meus-pedidos`" class="store-nav-link">
                             <i class="pi pi-list mr-1"></i>Pedidos
+                        </router-link>
+                        <router-link :to="`/c/${slug}/meu-perfil`" class="store-nav-link">
+                            <i class="pi pi-user-edit mr-1"></i>Perfil
                         </router-link>
                     </template>
                     <router-link v-else :to="{ name: 'login' }" class="store-nav-link">
@@ -60,10 +67,11 @@ const route  = useRoute();
 const { isAuthenticated } = useAuth();
 const { count, total } = useCart();
 
-const slug          = computed(() => route.params.slug);
-const atleticaName  = ref('Atlética');
-const carregando    = ref(false);
+const slug           = computed(() => route.params.slug);
+const atleticaName   = ref('Atlética');
+const carregando     = ref(false);
 const tenantInvalido = ref(false);
+const isCommissioner = ref(false);
 
 onMounted(async () => {
     if (!slug.value) { tenantInvalido.value = true; return; }
@@ -72,7 +80,14 @@ onMounted(async () => {
         const { data } = await api.get(`/atletica/${slug.value}`);
         atleticaName.value = data.name;
     } catch { tenantInvalido.value = true; }
-    finally   { carregando.value = false; }
+    finally { carregando.value = false; }
+
+    if (isAuthenticated.value) {
+        try {
+            const { data } = await api.get('/commissioner/status');
+            isCommissioner.value = data.is_commissioner;
+        } catch {}
+    }
 });
 </script>
 
@@ -84,6 +99,7 @@ onMounted(async () => {
 .store-header-actions { display:flex; align-items:center; gap:1rem; }
 .store-nav-link { color:rgba(255,255,255,.9); text-decoration:none; font-size:.9rem; transition:color .2s; }
 .store-nav-link:hover { color:#fff; }
+.commissioner-link { background:rgba(255,255,255,.2); padding:.3rem .8rem; border-radius:16px; font-weight:600; }
 .cart-btn { display:flex; align-items:center; gap:.4rem; color:#fff; text-decoration:none; background:rgba(255,255,255,.15); padding:.4rem .9rem; border-radius:20px; transition:background .2s; }
 .cart-btn:hover { background:rgba(255,255,255,.25); }
 .cart-total { font-weight:600; font-size:.9rem; }

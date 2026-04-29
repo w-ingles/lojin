@@ -28,4 +28,18 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool { return $this->role === 'super_admin'; }
     public function isAdmin(): bool      { return in_array($this->role, ['admin','super_admin']); }
     public function isUser(): bool       { return $this->role === 'user'; }
+
+    // ── Completude de perfil para checkout ────────────────────────────────────
+    public function isProfileComplete(): bool
+    {
+        return !empty($this->name) && !empty($this->email) && !empty($this->phone);
+    }
+
+    public function profileMissingFields(): array
+    {
+        $missing = [];
+        if (empty($this->name))  $missing[] = 'nome';
+        if (empty($this->phone)) $missing[] = 'telefone';
+        return $missing;
+    }
 }

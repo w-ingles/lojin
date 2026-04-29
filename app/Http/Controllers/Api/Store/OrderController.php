@@ -14,20 +14,20 @@ class OrderController extends Controller
 {
     public function store(StoreOrderRequest $request): JsonResponse
     {
-        $data        = $request->validated();
-        $authUser    = auth('sanctum')->user();
-        $commissioner = $request->commissioner();
+        $data = $request->validated();
+        $user = $request->user();
 
-        $order = DB::transaction(function () use ($data, $authUser, $commissioner) {
+        $order = DB::transaction(function () use ($data, $user) {
             $order = Order::create([
-                'customer_name'   => $data['customer_name'],
-                'customer_email'  => $data['customer_email'] ?? null,
-                'customer_phone'  => $data['customer_phone'] ?? null,
-                'customer_cpf'    => isset($data['customer_cpf']) ? preg_replace('/\D/', '', $data['customer_cpf']) : null,
-                'commissioner_id' => $commissioner?->id,
-                'notes'           => $data['notes'] ?? null,
-                'user_id'         => $authUser?->id,
-                'status'          => 'pending',
+                'user_id'        => $user->id,
+                'customer_name'  => $user->name,
+                'customer_email' => $user->email,
+                'customer_phone' => $user->phone,
+                'customer_cpf'   => $user->cpf
+                    ? preg_replace('/\D/', '', $user->cpf)
+                    : null,
+                'notes'  => $data['notes'] ?? null,
+                'status' => 'pending',
             ]);
 
             $subtotal = 0;
@@ -49,7 +49,7 @@ class OrderController extends Controller
                         Ticket::create([
                             'ticket_batch_id' => $batch->id,
                             'order_item_id'   => $orderItem->id,
-                            'user_id'         => $authUser?->id,
+                            'user_id'         => $user->id,
                             'status'          => 'reserved',
                         ]);
                     }
@@ -81,7 +81,7 @@ class OrderController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        return response()->json(Order::with(['items','items.tickets'])->findOrFail($id));
+        return response()->json(Order::with(['items', 'items.tickets'])->findOrFail($id));
     }
 
     public function myOrders(Request $request): JsonResponse
@@ -98,7 +98,10 @@ class OrderController extends Controller
             ->where('user_id', $request->user()->id)
             ->where('is_active', true)
             ->first();
-        return response()->json(['is_commissioner' => (bool) $commissioner, 'commissioner_id' => $commissioner?->id]);
+        return response()->json([
+            'is_commissioner' => (bool) $commissioner,
+            'commissioner_id' => $commissioner?->id,
+        ]);
     }
 
     public function meusIngressos(Request $request): JsonResponse
@@ -120,7 +123,9 @@ class OrderController extends Controller
                     'data'       => $t->batch?->event?->starts_at,
                     'local'      => $t->batch?->event?->location,
                     'status'     => $t->batch?->event?->status,
-                    'banner_url' => $t->batch?->event?->banner ? asset('storage/' . $t->batch->event->banner) : null,
+                    'banner_url' => $t->batch?->event?->banner
+                        ? asset('storage/' . $t->batch->event->banner)
+                        : null,
                 ],
             ]);
         return response()->json($tickets);
