@@ -23,8 +23,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me',      [AuthController::class, 'me']);
 
     // Perfil do usuário — sem contexto de tenant (acessível do layout público)
-    Route::get('/profile', [UserProfileController::class, 'show']);
-    Route::put('/profile', [UserProfileController::class, 'update']);
+    Route::get('/profile',    [UserProfileController::class, 'show']);
+    Route::put('/profile',    [UserProfileController::class, 'update']);
+
+    // Todos os ingressos do usuário em todas as atléticas
+    Route::get('/all-tickets', [Store\OrderController::class, 'todosIngressos']);
 });
 
 // ── Catálogo público de atléticas ────────────────────────────────────────────

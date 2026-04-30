@@ -104,6 +104,42 @@ class OrderController extends Controller
         ]);
     }
 
+    public function todosIngressos(Request $request): JsonResponse
+    {
+        $tickets = \App\Models\Ticket::withoutGlobalScope(\App\Scopes\TenantScope::class)
+            ->with([
+                'batch:id,event_id,name,price',
+                'batch.event:id,tenant_id,name,starts_at,location,status,banner',
+                'batch.event.tenant:id,name,slug',
+            ])
+            ->where('user_id', $request->user()->id)
+            ->latest()
+            ->get()
+            ->map(fn ($t) => [
+                'id'         => $t->id,
+                'code'       => $t->code,
+                'status'     => $t->status,
+                'used_at'    => $t->used_at,
+                'created_at' => $t->created_at,
+                'atletica'   => [
+                    'nome' => $t->batch?->event?->tenant?->name,
+                    'slug' => $t->batch?->event?->tenant?->slug,
+                ],
+                'lote'  => ['nome' => $t->batch?->name, 'preco' => $t->batch?->price],
+                'evento' => [
+                    'nome'       => $t->batch?->event?->name,
+                    'data'       => $t->batch?->event?->starts_at,
+                    'local'      => $t->batch?->event?->location,
+                    'status'     => $t->batch?->event?->status,
+                    'banner_url' => $t->batch?->event?->banner
+                        ? asset('storage/' . $t->batch->event->banner)
+                        : null,
+                ],
+            ]);
+
+        return response()->json($tickets);
+    }
+
     public function meusIngressos(Request $request): JsonResponse
     {
         $tickets = \App\Models\Ticket::with([

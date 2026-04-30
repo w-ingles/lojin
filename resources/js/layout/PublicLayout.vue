@@ -13,6 +13,10 @@
                             <i class="pi pi-th-large mr-1"></i>Painel
                         </router-link>
 
+                        <router-link to="/ingressos" class="header-link">
+                            <i class="pi pi-ticket mr-1"></i>Ingressos
+                        </router-link>
+
                         <router-link to="/perfil" class="user-info">
                             <Avatar :label="iniciais" shape="circle" class="user-avatar" />
                             <span class="user-name">{{ primeiroNome }}</span>
