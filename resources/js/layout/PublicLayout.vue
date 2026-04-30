@@ -12,6 +12,12 @@
                         <router-link v-if="isAdmin" :to="isSuperAdmin ? '/super-admin' : '/admin'" class="header-link">
                             <i class="pi pi-th-large mr-1"></i>Painel
                         </router-link>
+
+                        <router-link to="/perfil" class="user-info">
+                            <Avatar :label="iniciais" shape="circle" class="user-avatar" />
+                            <span class="user-name">{{ primeiroNome }}</span>
+                        </router-link>
+
                         <button class="header-link header-btn" @click="sair">
                             <i class="pi pi-sign-out mr-1"></i>Sair
                         </button>
@@ -39,11 +45,21 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
 
 const router = useRouter();
-const { isAuthenticated, isAdmin, isSuperAdmin, logout } = useAuth();
+const { isAuthenticated, isAdmin, isSuperAdmin, logout, user } = useAuth();
+
+const primeiroNome = computed(() => user.value?.name?.split(' ')[0] ?? '');
+
+const iniciais = computed(() => {
+    const partes = (user.value?.name ?? '').trim().split(' ').filter(Boolean);
+    if (partes.length === 0) return '?';
+    if (partes.length === 1) return partes[0][0].toUpperCase();
+    return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+});
 
 async function sair() {
     await logout();
@@ -117,6 +133,31 @@ async function sair() {
     transition: background .2s;
 }
 .header-btn-primary:hover { background: rgba(255,255,255,.28); }
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    text-decoration: none;
+    transition: opacity .2s;
+}
+.user-info:hover { opacity: .85; }
+.user-avatar {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: .8rem !important;
+    font-weight: 700;
+    background: rgba(255,255,255,.9) !important;
+    color: #1976d2 !important;
+}
+.user-name {
+    color: #fff;
+    font-size: .9rem;
+    font-weight: 600;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .public-main {
     flex: 1;
     max-width: 1280px;

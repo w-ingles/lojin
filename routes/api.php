@@ -21,6 +21,10 @@ Route::post('/auth/login',            [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me',      [AuthController::class, 'me']);
+
+    // Perfil do usuário — sem contexto de tenant (acessível do layout público)
+    Route::get('/profile', [UserProfileController::class, 'show']);
+    Route::put('/profile', [UserProfileController::class, 'update']);
 });
 
 // ── Catálogo público de atléticas ────────────────────────────────────────────

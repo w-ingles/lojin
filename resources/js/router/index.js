@@ -84,6 +84,7 @@ const routes = [
     // ── Auth ────────────────────────────────────────────────────────────────
     { path: '/login',    name: 'login',    component: () => import('@/views/auth/Login.vue') },
     { path: '/register', name: 'register', component: () => import('@/views/auth/Register.vue') },
+    { path: '/perfil',   name: 'perfil',   meta: { requiresAuth: true }, component: () => import('@/views/PerfilUsuario.vue') },
     { path: '/access',   name: 'access',   component: () => import('@/views/pages/Access.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/' },
 ];
