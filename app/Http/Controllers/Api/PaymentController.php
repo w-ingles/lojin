@@ -55,8 +55,10 @@ class PaymentController extends Controller
             $payment = (new PaymentClient())->create($paymentData);
         } catch (MPApiException $e) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Erro ao processar pagamento. Tente novamente.',
+                'status'     => 'error',
+                'message'    => 'Erro ao processar pagamento. Tente novamente.',
+                'mp_status'  => $e->getApiResponse()->getStatusCode(),
+                'mp_error'   => $e->getApiResponse()->getContent(),
             ], 502);
         }
 
