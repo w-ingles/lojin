@@ -25,12 +25,11 @@ export default defineConfig({
         }),
     ],
 
-    // Vite irá processar o index.mobile.html como entry point
     build: {
         outDir: 'dist',
         emptyOutDir: true,
         rollupOptions: {
-            input: resolve(__dirname, 'index.mobile.html'),
+            input: resolve(__dirname, 'index.html'),
         },
     },
 

@@ -10,3 +10,20 @@
     top: 114px;
 }
 
+/*
+ * Scanner de câmera nativo (Capacitor BarcodeScanner)
+ * Quando o scanner abre, o plugin chama BarcodeScanner.hideBackground()
+ * que torna o WebView transparente — mas o body/html também precisam
+ * ser transparentes para a câmera aparecer por baixo.
+ * A classe .scanner-active é adicionada ao body via JS antes de escanear.
+ */
+body.scanner-active,
+body.scanner-active #app {
+    background: transparent !important;
+}
+body.scanner-active .layout-wrapper,
+body.scanner-active .store-layout,
+body.scanner-active .public-layout {
+    background: transparent !important;
+}
+
