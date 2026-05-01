@@ -36,7 +36,10 @@ class PaymentController extends Controller
             'payment_method_id'  => $request->input('payment_method_id'),
             'payer'              => [
                 'email'          => $order->customer_email,
-                'identification' => $request->input('payer.identification', []),
+                'identification' => [
+                    'type'   => 'CPF',
+                    'number' => preg_replace('/\D/', '', $order->customer_cpf ?? ''),
+                ],
             ],
         ];
 
