@@ -12,6 +12,37 @@ use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
+    public function ticketLimits(Request $request): JsonResponse
+    {
+        $batchIds = array_filter(array_map('intval', (array) $request->query('batch_ids', [])));
+        if (empty($batchIds)) return response()->json([]);
+
+        $batches = TicketBatch::with('event:id,name')->whereIn('id', $batchIds)->get();
+        $user    = $request->user();
+
+        $eventCounts = [];
+        $result      = [];
+
+        foreach ($batches as $batch) {
+            $eventId = $batch->event_id;
+            if (!isset($eventCounts[$eventId])) {
+                $eventCounts[$eventId] = Ticket::where('user_id', $user->id)
+                    ->whereIn('status', ['reserved', 'paid'])
+                    ->whereHas('batch', fn($q) => $q->where('event_id', $eventId))
+                    ->count();
+            }
+            $existing = $eventCounts[$eventId];
+            $result[$batch->id] = [
+                'event_name' => $batch->event->name,
+                'existing'   => $existing,
+                'limit'      => 5,
+                'remaining'  => max(0, 5 - $existing),
+            ];
+        }
+
+        return response()->json($result);
+    }
+
     public function store(StoreOrderRequest $request): JsonResponse
     {
         $data = $request->validated();
@@ -30,12 +61,25 @@ class OrderController extends Controller
                 'status' => 'pending',
             ]);
 
-            $subtotal = 0;
+            $subtotal           = 0;
+            $purchasingPerEvent = [];
+
             foreach ($data['items'] as $item) {
                 if ($item['type'] === 'ticket_batch') {
                     $batch = TicketBatch::findOrFail($item['id']);
                     abort_if(!$batch->isAvailable(), 422, "Lote \"{$batch->name}\" indisponível.");
                     abort_if($batch->available < $item['qty'], 422, "Estoque insuficiente para \"{$batch->name}\".");
+
+                    $purchasingPerEvent[$batch->event_id] = ($purchasingPerEvent[$batch->event_id] ?? 0) + $item['qty'];
+                    $existing = Ticket::where('user_id', $user->id)
+                        ->whereIn('status', ['reserved', 'paid'])
+                        ->whereHas('batch', fn($q) => $q->where('event_id', $batch->event_id))
+                        ->count();
+                    abort_if(
+                        $existing + $purchasingPerEvent[$batch->event_id] > 5,
+                        422,
+                        "Limite de 5 ingressos por CPF atingido para \"{$batch->event->name}\"."
+                    );
                     $lineTotal = $batch->price * $item['qty'];
                     $orderItem = $order->items()->create([
                         'itemable_type' => TicketBatch::class,

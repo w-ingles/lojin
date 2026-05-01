@@ -81,8 +81,9 @@ Route::middleware(['auth:sanctum', 'require.tenant'])->group(function () {
     Route::get('/commissioner/status', [Store\OrderController::class, 'commissionerStatus']);
 
     // Perfil do usuário na loja
-    Route::get('/user/profile', [UserProfileController::class, 'show']);
-    Route::put('/user/profile', [UserProfileController::class, 'update']);
+    Route::get('/user/profile',        [UserProfileController::class, 'show']);
+    Route::put('/user/profile',        [UserProfileController::class, 'update']);
+    Route::get('/user/ticket-limits',  [Store\OrderController::class, 'ticketLimits']);
 
     // ── Fluxo exclusivo de comissários (CPF → cliente → venda) ───────────────
     Route::get('/commissioner/lookup',  [CommissionerSalesController::class, 'lookup']);

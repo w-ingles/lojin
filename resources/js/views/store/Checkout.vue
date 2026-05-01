@@ -70,10 +70,19 @@
             <div class="col-12 lg:col-5">
                 <div class="card" style="position:sticky;top:80px">
                     <h5 class="mt-0">Resumo do Pedido</h5>
-                    <div v-for="item in items" :key="`${item.type}-${item.id}`"
-                        class="flex justify-content-between mb-2 text-sm">
-                        <span>{{ item.qty }}× {{ item.name }}</span>
-                        <span class="font-semibold">R$ {{ (item.price * item.qty).toFixed(2) }}</span>
+                    <div v-for="item in items" :key="`${item.type}-${item.id}`" class="mb-2">
+                        <div class="flex justify-content-between text-sm">
+                            <span>{{ item.qty }}× {{ item.name }}</span>
+                            <span class="font-semibold">R$ {{ (item.price * item.qty).toFixed(2) }}</span>
+                        </div>
+                        <div v-if="item.type === 'ticket_batch' && ticketLimits[item.id]">
+                            <small v-if="item.qty > ticketLimits[item.id].remaining" style="color:#c62828">
+                                Você já tem {{ ticketLimits[item.id].existing }} ingresso(s) para este evento — limite de 5 por CPF.
+                            </small>
+                            <small v-else-if="ticketLimits[item.id].existing > 0" class="text-color-secondary">
+                                Você já tem {{ ticketLimits[item.id].existing }} ingresso(s) para este evento (máx. 5).
+                            </small>
+                        </div>
                     </div>
                     <Divider />
                     <div class="flex justify-content-between font-bold text-lg mb-4">
@@ -81,7 +90,7 @@
                         <span style="color:#2e7d32">R$ {{ total.toFixed(2) }}</span>
                     </div>
                     <Button label="Confirmar Pedido" icon="pi pi-check" class="p-button-success w-full"
-                        :loading="enviando" :disabled="items.length === 0" @click="confirmar" />
+                        :loading="enviando" :disabled="items.length === 0 || limiteExcedido" @click="confirmar" />
                 </div>
             </div>
         </div>
@@ -90,7 +99,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import api from '@/service/ApiService';
@@ -104,10 +113,29 @@ const toast  = useToast();
 const { items, total, clear } = useCart();
 const { user, isAuthenticated } = useAuth();
 
-const enviando        = ref(false);
+const enviando         = ref(false);
 const perfilIncompleto = ref(false);
-const camposFaltando  = ref([]);
-const notes           = ref('');
+const camposFaltando   = ref([]);
+const notes            = ref('');
+const ticketLimits     = ref({});
+
+const limiteExcedido = computed(() =>
+    items.value.some(i => {
+        if (i.type !== 'ticket_batch') return false;
+        const l = ticketLimits.value[i.id];
+        return l && i.qty > l.remaining;
+    })
+);
+
+async function verificarLimites() {
+    if (!isAuthenticated.value) return;
+    const batchIds = items.value.filter(i => i.type === 'ticket_batch').map(i => i.id);
+    if (batchIds.length === 0) return;
+    try {
+        const { data } = await api.get('/user/ticket-limits', { params: { batch_ids: batchIds } });
+        ticketLimits.value = data;
+    } catch {}
+}
 
 async function verificarPerfil() {
     if (!isAuthenticated.value) return;
@@ -148,5 +176,5 @@ async function confirmar() {
     } finally { enviando.value = false; }
 }
 
-onMounted(() => verificarPerfil());
+onMounted(() => { verificarPerfil(); verificarLimites(); });
 </script>
