@@ -54,6 +54,5 @@ class Order extends Model
     public function markAsPaid(): void
     {
         $this->update(['status' => 'paid', 'paid_at' => now()]);
-        $this->items->each(fn ($item) => $item->tickets()->update(['status' => 'paid']));
     }
 }
