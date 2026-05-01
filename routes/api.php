@@ -97,7 +97,7 @@ Route::middleware(['auth:sanctum', 'require.tenant', 'profile.complete'])->group
 
 // ── Pagamento (Mercado Pago) ───────────────────────────────────────────────────
 Route::middleware(['auth:sanctum', 'require.tenant'])->group(function () {
-    Route::post('/payments/{orderId}/preference', [PaymentController::class, 'criarPreferencia']);
+    Route::post('/payments/{orderId}/process', [PaymentController::class, 'processar']);
 });
 
 // ── Webhook público do Mercado Pago ───────────────────────────────────────────

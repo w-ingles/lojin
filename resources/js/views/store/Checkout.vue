@@ -1,8 +1,8 @@
 <template>
     <div>
         <div class="flex align-items-center gap-2 mb-4">
-            <Button icon="pi pi-arrow-left" class="p-button-text" @click="$router.back()" />
-            <h3 class="m-0">Finalizar Compra</h3>
+            <Button v-if="passo === 1" icon="pi pi-arrow-left" class="p-button-text" @click="$router.back()" />
+            <h3 class="m-0">{{ passo === 1 ? 'Finalizar Compra' : 'Pagamento' }}</h3>
         </div>
 
         <!-- Não autenticado -->
@@ -15,7 +15,7 @@
         </div>
 
         <!-- Perfil incompleto -->
-        <div v-else-if="perfilIncompleto" class="card py-4">
+        <div v-else-if="perfilIncompleto && passo === 1" class="card py-4">
             <div class="flex align-items-start gap-3 mb-4 p-3 border-round"
                 style="background:#fff8e1;border:1px solid #ffe082">
                 <i class="pi pi-exclamation-triangle mt-1" style="color:#f57f17;font-size:1.3rem"></i>
@@ -31,8 +31,8 @@
                 @click="router.push(`/c/${route.params.slug}/meu-perfil`)" />
         </div>
 
-        <!-- Checkout normal -->
-        <div v-else class="grid">
+        <!-- Passo 1: Resumo -->
+        <div v-else-if="passo === 1" class="grid">
             <div class="col-12 lg:col-7">
                 <div class="card">
                     <div class="flex align-items-center justify-content-between mb-3">
@@ -42,7 +42,6 @@
                         <Button label="Editar perfil" icon="pi pi-pencil" class="p-button-text p-button-sm"
                             @click="router.push(`/c/${route.params.slug}/meu-perfil`)" />
                     </div>
-
                     <div class="p-3 border-round" style="background:var(--surface-ground)">
                         <div class="grid">
                             <div class="col-12">
@@ -59,7 +58,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="field mt-3 mb-0">
                         <label>Observações <span class="text-color-secondary text-sm">(opcional)</span></label>
                         <Textarea v-model="notes" rows="2" autoResize placeholder="Alguma observação..." />
@@ -89,17 +87,65 @@
                         <span>Total</span>
                         <span style="color:#2e7d32">R$ {{ total.toFixed(2) }}</span>
                     </div>
-                    <Button label="Confirmar Pedido" icon="pi pi-check" class="p-button-success w-full"
+                    <Button label="Ir para Pagamento" icon="pi pi-lock" class="p-button-success w-full"
                         :loading="enviando" :disabled="items.length === 0 || limiteExcedido" @click="confirmar" />
                 </div>
             </div>
         </div>
+
+        <!-- Passo 2: Brick de Pagamento -->
+        <div v-else-if="passo === 2">
+            <div class="card">
+                <div v-if="brickCarregando" class="text-center py-5">
+                    <i class="pi pi-spin pi-spinner text-4xl" style="color:#1976d2"></i>
+                    <p class="mt-3 text-color-secondary">Carregando formulário de pagamento...</p>
+                </div>
+                <div id="mp-payment-brick"></div>
+            </div>
+        </div>
+
+        <!-- Passo 3: Pagamento Pendente (PIX / Boleto) -->
+        <div v-else-if="passo === 3" class="card text-center">
+            <i class="pi pi-clock text-5xl mb-3 block" style="color:#f57f17"></i>
+            <h4>Aguardando confirmação</h4>
+
+            <!-- PIX -->
+            <div v-if="pagamentoPendente?.pix_base64" class="mb-4">
+                <p class="text-color-secondary mb-3">Escaneie o QR Code abaixo com seu app de banco:</p>
+                <img :src="`data:image/png;base64,${pagamentoPendente.pix_base64}`"
+                    alt="QR Code PIX" style="max-width:220px;margin:0 auto;display:block" />
+                <div v-if="pagamentoPendente.pix_code" class="mt-3">
+                    <p class="text-sm text-color-secondary mb-2">Ou copie o código PIX:</p>
+                    <div class="flex gap-2 justify-content-center">
+                        <InputText :value="pagamentoPendente.pix_code" readonly
+                            style="font-size:.75rem;max-width:320px" />
+                        <Button icon="pi pi-copy" class="p-button-outlined" @click="copiarPix" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Boleto -->
+            <div v-else-if="pagamentoPendente?.boleto_url" class="mb-4">
+                <p class="text-color-secondary mb-3">Seu boleto foi gerado:</p>
+                <a :href="pagamentoPendente.boleto_url" target="_blank" rel="noopener">
+                    <Button label="Abrir Boleto" icon="pi pi-external-link" class="p-button-outlined" />
+                </a>
+            </div>
+
+            <p class="text-sm text-color-secondary mt-3">
+                Após o pagamento, seu ingresso será gerado automaticamente e ficará disponível em
+                <strong>Meus Ingressos</strong>.
+            </p>
+            <Button label="Ver meus pedidos" icon="pi pi-list" class="p-button-text mt-2"
+                @click="router.push(`/c/${route.params.slug}/meus-pedidos`)" />
+        </div>
+
         <Toast />
     </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import api from '@/service/ApiService';
@@ -113,11 +159,16 @@ const toast  = useToast();
 const { items, total, clear } = useCart();
 const { user, isAuthenticated } = useAuth();
 
+const passo            = ref(1);
 const enviando         = ref(false);
+const brickCarregando  = ref(false);
 const perfilIncompleto = ref(false);
 const camposFaltando   = ref([]);
 const notes            = ref('');
 const ticketLimits     = ref({});
+const pagamentoPendente = ref(null);
+const brickController  = ref(null);
+const pedidoId         = ref(null);
 
 const limiteExcedido = computed(() =>
     items.value.some(i => {
@@ -149,17 +200,17 @@ async function verificarPerfil() {
 }
 
 async function confirmar() {
-    if (items.value.length === 0) return;
+    if (items.value.length === 0 || limiteExcedido.value) return;
     enviando.value = true;
     try {
         const { data: order } = await api.post('/orders', {
             items: items.value.map(i => ({ type: i.type, id: i.id, qty: i.qty })),
             notes: notes.value || undefined,
         });
-
-        const { data: payment } = await api.post(`/payments/${order.id}/preference`);
-        clear();
-        window.location.href = payment.checkout_url;
+        pedidoId.value = order.id;
+        passo.value    = 2;
+        await nextTick();
+        await montarBrick(order.id, parseFloat(order.total));
     } catch (err) {
         const code = err.response?.data?.code;
         if (code === 'PROFILE_INCOMPLETE') {
@@ -169,12 +220,73 @@ async function confirmar() {
         }
         toast.add({
             severity: 'error',
-            summary: 'Erro ao realizar pedido',
+            summary: 'Erro ao criar pedido',
             detail: err.response?.data?.message ?? 'Tente novamente.',
             life: 4000,
         });
-    } finally { enviando.value = false; }
+    } finally {
+        enviando.value = false;
+    }
+}
+
+function carregarSdkMp() {
+    return new Promise((resolve) => {
+        if (window.MercadoPago) { resolve(); return; }
+        const script = document.createElement('script');
+        script.src = 'https://sdk.mercadopago.com/js/v2';
+        script.onload = resolve;
+        document.head.appendChild(script);
+    });
+}
+
+async function montarBrick(orderId, amount) {
+    brickCarregando.value = true;
+    await carregarSdkMp();
+
+    const mp = new window.MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY, { locale: 'pt-BR' });
+
+    brickController.value = await mp.bricks().create('payment', 'mp-payment-brick', {
+        initialization: {
+            amount,
+            payer: { email: user.value?.email },
+        },
+        customization: {
+            paymentMethods: {
+                creditCard:   'all',
+                debitCard:    'all',
+                ticket:       'all',
+                bankTransfer: 'all',
+            },
+        },
+        callbacks: {
+            onReady: () => { brickCarregando.value = false; },
+            onSubmit: ({ formData }) => new Promise(async (resolve, reject) => {
+                try {
+                    const { data } = await api.post(`/payments/${orderId}/process`, formData);
+                    if (data.status === 'approved') {
+                        clear();
+                        router.push({ name: 'store-pedido', params: { slug: route.params.slug, id: orderId } });
+                    } else if (data.status === 'pending') {
+                        pagamentoPendente.value = data.details;
+                        passo.value = 3;
+                    }
+                    resolve();
+                } catch (err) {
+                    reject(err.response?.data?.message ?? 'Erro ao processar pagamento.');
+                }
+            }),
+            onError: (err) => console.error('MP Brick error:', err),
+        },
+    });
+}
+
+async function copiarPix() {
+    try {
+        await navigator.clipboard.writeText(pagamentoPendente.value.pix_code);
+        toast.add({ severity: 'success', summary: 'Copiado!', detail: 'Código PIX copiado.', life: 2000 });
+    } catch {}
 }
 
 onMounted(() => { verificarPerfil(); verificarLimites(); });
+onUnmounted(() => { brickController.value?.unmount(); });
 </script>
