@@ -271,7 +271,6 @@ async function montarBrick(orderId, amount) {
                     creditCard:   'all',
                     debitCard:    'all',
                     bankTransfer: 'all',
-                    excludedPaymentMethods: [{ id: 'caixa' }],
                 },
             },
             callbacks: {

@@ -30,34 +30,34 @@ class PaymentController extends Controller
 
         MercadoPagoConfig::setAccessToken(config('mercadopago.access_token'));
 
-        $cpf = preg_replace('/\D/', '', $order->customer_cpf ?? '');
-
-        $paymentData = [
-            'transaction_amount' => (float) $order->total,
-            'description'        => 'Ingresso - ' . ($order->items->first()->item_name ?? 'Evento'),
-            'external_reference' => (string) $order->id,
-            'notification_url'   => url('/api/webhooks/mercadopago'),
-            'payment_method_id'  => $request->input('payment_method_id'),
-            'payer'              => [
-                'email'          => $order->customer_email,
-                'identification' => [
-                    'type'   => 'CPF',
-                    'number' => $cpf,
-                ],
-            ],
-        ];
-
-        Log::info('MP paymentData', ['cpf_len' => strlen($cpf), 'amount' => $order->total, 'method' => $request->input('payment_method_id')]);
-
-        if ($request->filled('token')) {
-            $paymentData['token']        = $request->input('token');
-            $paymentData['installments'] = (int) $request->input('installments', 1);
-            if ($request->filled('issuer_id')) {
-                $paymentData['issuer_id'] = $request->input('issuer_id');
-            }
-        }
-
         try {
+            $cpf = preg_replace('/\D/', '', $order->customer_cpf ?? '');
+
+            $paymentData = [
+                'transaction_amount' => (float) $order->total,
+                'description'        => 'Ingresso - ' . ($order->items->first()->item_name ?? 'Evento'),
+                'external_reference' => (string) $order->id,
+                'notification_url'   => url('/api/webhooks/mercadopago'),
+                'payment_method_id'  => $request->input('payment_method_id'),
+                'payer'              => [
+                    'email'          => $order->customer_email,
+                    'identification' => [
+                        'type'   => 'CPF',
+                        'number' => $cpf,
+                    ],
+                ],
+            ];
+
+            Log::info('MP paymentData', ['cpf_len' => strlen($cpf), 'amount' => $order->total, 'method' => $request->input('payment_method_id')]);
+
+            if ($request->filled('token')) {
+                $paymentData['token']        = $request->input('token');
+                $paymentData['installments'] = (int) $request->input('installments', 1);
+                if ($request->filled('issuer_id')) {
+                    $paymentData['issuer_id'] = $request->input('issuer_id');
+                }
+            }
+
             $payment = (new PaymentClient())->create($paymentData);
         } catch (MPApiException $e) {
             return response()->json([
