@@ -39,6 +39,8 @@ class CheckPendingPayments extends Command
 
                 if (!$payment) continue;
 
+                $this->line("  Pedido #{$order->id} | payment_id: {$order->payment_id} | status MP: {$payment->status}");
+
                 if ($payment->status === 'approved') {
                     DB::transaction(function () use ($order, $payment) {
                         foreach ($order->items as $item) {
