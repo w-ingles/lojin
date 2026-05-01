@@ -7,6 +7,7 @@ use App\Models\Order;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use MercadoPago\Client\Preference\PreferenceClient;
+use MercadoPago\Exceptions\MPApiException;
 use MercadoPago\MercadoPagoConfig;
 
 class PaymentController extends Controller
@@ -36,23 +37,32 @@ class PaymentController extends Controller
             'currency_id' => 'BRL',
         ])->toArray();
 
-        $client     = new PreferenceClient();
-        $preference = $client->create([
-            'items'      => $items,
-            'payer'      => [
-                'name'  => $order->customer_name,
-                'email' => $order->customer_email,
-            ],
-            'back_urls'  => [
-                'success' => "{$baseUrl}/c/{$slug}/pagamento/sucesso/{$order->id}",
-                'failure' => "{$baseUrl}/c/{$slug}/pagamento/falha/{$order->id}",
-                'pending' => "{$baseUrl}/c/{$slug}/pagamento/pendente/{$order->id}",
-            ],
-            'auto_return'          => 'approved',
-            'notification_url'     => url('/api/webhooks/mercadopago'),
-            'external_reference'   => (string) $order->id,
-            'statement_descriptor' => 'Lojin',
-        ]);
+        $client = new PreferenceClient();
+
+        try {
+            $preference = $client->create([
+                'items'      => $items,
+                'payer'      => [
+                    'name'  => $order->customer_name,
+                    'email' => $order->customer_email,
+                ],
+                'back_urls'  => [
+                    'success' => "{$baseUrl}/c/{$slug}/pagamento/sucesso/{$order->id}",
+                    'failure' => "{$baseUrl}/c/{$slug}/pagamento/falha/{$order->id}",
+                    'pending' => "{$baseUrl}/c/{$slug}/pagamento/pendente/{$order->id}",
+                ],
+                'auto_return'          => 'approved',
+                'notification_url'     => url('/api/webhooks/mercadopago'),
+                'external_reference'   => (string) $order->id,
+                'statement_descriptor' => 'Lojin',
+            ]);
+        } catch (MPApiException $e) {
+            return response()->json([
+                'message'       => 'Erro ao criar preferência de pagamento.',
+                'mp_status'     => $e->getApiResponse()->getStatusCode(),
+                'mp_response'   => $e->getApiResponse()->getContent(),
+            ], 502);
+        }
 
         $sandbox = config('mercadopago.sandbox', true);
 
