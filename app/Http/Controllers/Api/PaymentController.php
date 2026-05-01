@@ -41,18 +41,11 @@ class PaymentController extends Controller
 
         try {
             $preference = $client->create([
-                'items'      => $items,
-                'payer'      => [
+                'items' => $items,
+                'payer' => [
                     'name'  => $order->customer_name,
                     'email' => $order->customer_email,
                 ],
-                'back_urls'  => [
-                    'success' => "{$baseUrl}/c/{$slug}/pagamento/sucesso/{$order->id}",
-                    'failure' => "{$baseUrl}/c/{$slug}/pagamento/falha/{$order->id}",
-                    'pending' => "{$baseUrl}/c/{$slug}/pagamento/pendente/{$order->id}",
-                ],
-                'auto_return'        => 'approved',
-                'notification_url'   => url('/api/webhooks/mercadopago'),
                 'external_reference' => (string) $order->id,
             ]);
         } catch (MPApiException $e) {
