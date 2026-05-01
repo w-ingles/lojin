@@ -96,7 +96,11 @@
         <!-- Passo 2: Brick de Pagamento -->
         <div v-else-if="passo === 2">
             <div class="card">
-                <div v-if="brickCarregando" class="text-center py-5">
+                <div v-if="erroMontagem" class="p-3 border-round mb-3"
+                    style="background:#ffebee;border:1px solid #ef9a9a;color:#b71c1c">
+                    <i class="pi pi-exclamation-circle mr-2"></i>{{ erroMontagem }}
+                </div>
+                <div v-if="brickCarregando && !erroMontagem" class="text-center py-5">
                     <i class="pi pi-spin pi-spinner text-4xl" style="color:#1976d2"></i>
                     <p class="mt-3 text-color-secondary">Carregando formulário de pagamento...</p>
                 </div>
@@ -169,6 +173,7 @@ const ticketLimits     = ref({});
 const pagamentoPendente = ref(null);
 const brickController  = ref(null);
 const pedidoId         = ref(null);
+const erroMontagem     = ref('');
 
 const limiteExcedido = computed(() =>
     items.value.some(i => {
@@ -230,54 +235,73 @@ async function confirmar() {
 }
 
 function carregarSdkMp() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         if (window.MercadoPago) { resolve(); return; }
         const script = document.createElement('script');
         script.src = 'https://sdk.mercadopago.com/js/v2';
         script.onload = resolve;
+        script.onerror = () => reject(new Error('Falha ao carregar SDK do Mercado Pago.'));
         document.head.appendChild(script);
     });
 }
 
 async function montarBrick(orderId, amount) {
     brickCarregando.value = true;
-    await carregarSdkMp();
+    erroMontagem.value    = '';
 
-    const mp = new window.MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY, { locale: 'pt-BR' });
+    const publicKey = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
+    if (!publicKey) {
+        brickCarregando.value = false;
+        erroMontagem.value = 'Chave pública do Mercado Pago não configurada (VITE_MERCADOPAGO_PUBLIC_KEY).';
+        return;
+    }
 
-    brickController.value = await mp.bricks().create('payment', 'mp-payment-brick', {
-        initialization: {
-            amount,
-            payer: { email: user.value?.email },
-        },
-        customization: {
-            paymentMethods: {
-                creditCard:   'all',
-                debitCard:    'all',
-                ticket:       'all',
-                bankTransfer: 'all',
+    try {
+        await carregarSdkMp();
+
+        const mp = new window.MercadoPago(publicKey, { locale: 'pt-BR' });
+
+        brickController.value = await mp.bricks().create('payment', 'mp-payment-brick', {
+            initialization: {
+                amount,
+                payer: { email: user.value?.email },
             },
-        },
-        callbacks: {
-            onReady: () => { brickCarregando.value = false; },
-            onSubmit: ({ formData }) => new Promise(async (resolve, reject) => {
-                try {
-                    const { data } = await api.post(`/payments/${orderId}/process`, formData);
-                    if (data.status === 'approved') {
-                        clear();
-                        router.push({ name: 'store-pedido', params: { slug: route.params.slug, id: orderId } });
-                    } else if (data.status === 'pending') {
-                        pagamentoPendente.value = data.details;
-                        passo.value = 3;
+            customization: {
+                paymentMethods: {
+                    creditCard:   'all',
+                    debitCard:    'all',
+                    ticket:       'all',
+                    bankTransfer: 'all',
+                },
+            },
+            callbacks: {
+                onReady: () => { brickCarregando.value = false; },
+                onSubmit: ({ formData }) => new Promise(async (resolve, reject) => {
+                    try {
+                        const { data } = await api.post(`/payments/${orderId}/process`, formData);
+                        if (data.status === 'approved') {
+                            clear();
+                            router.push({ name: 'store-pedido', params: { slug: route.params.slug, id: orderId } });
+                        } else if (data.status === 'pending') {
+                            pagamentoPendente.value = data.details;
+                            passo.value = 3;
+                        }
+                        resolve();
+                    } catch (err) {
+                        reject(err.response?.data?.message ?? 'Erro ao processar pagamento.');
                     }
-                    resolve();
-                } catch (err) {
-                    reject(err.response?.data?.message ?? 'Erro ao processar pagamento.');
-                }
-            }),
-            onError: (err) => console.error('MP Brick error:', err),
-        },
-    });
+                }),
+                onError: (err) => {
+                    console.error('MP Brick error:', err);
+                    brickCarregando.value = false;
+                    erroMontagem.value = `Erro ao inicializar formulário de pagamento: ${err?.message ?? JSON.stringify(err)}`;
+                },
+            },
+        });
+    } catch (err) {
+        brickCarregando.value = false;
+        erroMontagem.value = err.message ?? 'Erro ao carregar formulário de pagamento.';
+    }
 }
 
 async function copiarPix() {
