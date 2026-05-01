@@ -51,10 +51,9 @@ class PaymentController extends Controller
                     'failure' => "{$baseUrl}/c/{$slug}/pagamento/falha/{$order->id}",
                     'pending' => "{$baseUrl}/c/{$slug}/pagamento/pendente/{$order->id}",
                 ],
-                'auto_return'          => 'approved',
-                'notification_url'     => url('/api/webhooks/mercadopago'),
-                'external_reference'   => (string) $order->id,
-                'statement_descriptor' => 'Lojin',
+                'auto_return'        => 'approved',
+                'notification_url'   => url('/api/webhooks/mercadopago'),
+                'external_reference' => (string) $order->id,
             ]);
         } catch (MPApiException $e) {
             return response()->json([
