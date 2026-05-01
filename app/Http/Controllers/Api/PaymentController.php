@@ -27,7 +27,13 @@ class PaymentController extends Controller
         $slug    = app('current_tenant')->slug;
         $baseUrl = rtrim(config('app.url'), '/');
 
-        MercadoPagoConfig::setAccessToken(config('mercadopago.access_token'));
+        $token = config('mercadopago.access_token');
+
+        if (empty($token)) {
+            return response()->json(['message' => 'MERCADOPAGO_ACCESS_TOKEN não configurado.'], 500);
+        }
+
+        MercadoPagoConfig::setAccessToken($token);
 
         $items = $order->items->map(fn ($item) => [
             'id'          => (string) $item->id,
