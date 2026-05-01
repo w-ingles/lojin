@@ -50,6 +50,7 @@ class CheckPendingPayments extends Command
                                         'ticket_batch_id' => $item->itemable_id,
                                         'order_item_id'   => $item->id,
                                         'user_id'         => $order->user_id,
+                                        'tenant_id'       => $order->tenant_id,
                                         'status'          => 'paid',
                                     ]);
                                 }
