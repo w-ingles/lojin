@@ -48,8 +48,6 @@ class PaymentController extends Controller
                 ],
             ];
 
-            Log::info('MP paymentData', ['cpf_len' => strlen($cpf), 'amount' => $order->total, 'method' => $request->input('payment_method_id')]);
-
             if ($request->filled('token')) {
                 $paymentData['token']        = $request->input('token');
                 $paymentData['installments'] = (int) $request->input('installments', 1);
@@ -60,23 +58,11 @@ class PaymentController extends Controller
 
             $payment = (new PaymentClient())->create($paymentData);
         } catch (MPApiException $e) {
-            return response()->json([
-                'status'    => 'error',
-                'message'   => 'Erro ao processar pagamento. Tente novamente.',
-                'mp_status' => $e->getApiResponse()->getStatusCode(),
-                'mp_error'  => $e->getApiResponse()->getContent(),
-            ], 502);
+            Log::error('MP API error', ['status' => $e->getApiResponse()->getStatusCode(), 'body' => $e->getApiResponse()->getContent()]);
+            return response()->json(['status' => 'error', 'message' => 'Erro ao processar pagamento. Tente novamente.'], 502);
         } catch (\Throwable $e) {
-            Log::error('PaymentController error', [
-                'message' => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
-            ]);
-            return response()->json([
-                'status'  => 'error',
-                'message' => $e->getMessage(),
-                'file'    => $e->getFile() . ':' . $e->getLine(),
-            ], 500);
+            Log::error('PaymentController error', ['message' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
+            return response()->json(['status' => 'error', 'message' => 'Erro ao processar pagamento. Tente novamente.'], 500);
         }
 
         if ($payment->status === 'approved') {
