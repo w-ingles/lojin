@@ -26,6 +26,8 @@ class CheckPendingPayments extends Command
             ->where('created_at', '>=', now()->subHours(24))
             ->get();
 
+        $this->info("Pedidos pendentes com payment_id: {$orders->count()}");
+
         if ($orders->isEmpty()) return;
 
         MercadoPagoConfig::setAccessToken(config('mercadopago.access_token'));
