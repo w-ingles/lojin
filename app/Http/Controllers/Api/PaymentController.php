@@ -71,6 +71,11 @@ class PaymentController extends Controller
         }
 
         if (in_array($payment->status, ['pending', 'in_process'])) {
+            $order->update([
+                'payment_id'     => (string) $payment->id,
+                'payment_method' => $payment->payment_type_id ?? 'mercado_pago',
+            ]);
+
             $details = [];
             if ($payment->payment_method_id === 'pix') {
                 $txData = $payment->point_of_interaction->transaction_data ?? null;
@@ -79,7 +84,7 @@ class PaymentController extends Controller
             } elseif ($payment->payment_type_id === 'ticket') {
                 $details['boleto_url'] = $payment->transaction_details?->external_resource_url;
             }
-            return response()->json(['status' => 'pending', 'details' => $details]);
+            return response()->json(['status' => 'pending', 'order_id' => $order->id, 'details' => $details]);
         }
 
         return response()->json([

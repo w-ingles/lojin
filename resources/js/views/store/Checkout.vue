@@ -174,6 +174,7 @@ const pagamentoPendente = ref(null);
 const brickController  = ref(null);
 const pedidoId         = ref(null);
 const erroMontagem     = ref('');
+let   pollingInterval  = null;
 
 const limiteExcedido = computed(() =>
     items.value.some(i => {
@@ -284,6 +285,7 @@ async function montarBrick(orderId, amount) {
                         } else if (data.status === 'pending') {
                             pagamentoPendente.value = data.details;
                             passo.value = 3;
+                            iniciarPolling(orderId);
                         }
                         resolve();
                     } catch (err) {
@@ -310,6 +312,23 @@ async function copiarPix() {
     } catch {}
 }
 
+function iniciarPolling(orderId) {
+    pollingInterval = setInterval(async () => {
+        try {
+            const { data } = await api.get(`/orders/${orderId}`);
+            if (data.status === 'paid') {
+                clearInterval(pollingInterval);
+                clear();
+                router.push({ name: 'store-pedido', params: { slug: route.params.slug, id: orderId } });
+            } else if (data.status === 'cancelled') {
+                clearInterval(pollingInterval);
+                passo.value = 1;
+                toast.add({ severity: 'error', summary: 'Pagamento não confirmado', detail: 'O pagamento foi cancelado.', life: 5000 });
+            }
+        } catch {}
+    }, 10000);
+}
+
 onMounted(() => { verificarPerfil(); verificarLimites(); });
-onUnmounted(() => { brickController.value?.unmount(); });
+onUnmounted(() => { brickController.value?.unmount(); clearInterval(pollingInterval); });
 </script>
