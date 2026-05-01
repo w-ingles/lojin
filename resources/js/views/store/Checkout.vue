@@ -124,12 +124,14 @@ async function confirmar() {
     if (items.value.length === 0) return;
     enviando.value = true;
     try {
-        const { data } = await api.post('/orders', {
+        const { data: order } = await api.post('/orders', {
             items: items.value.map(i => ({ type: i.type, id: i.id, qty: i.qty })),
             notes: notes.value || undefined,
         });
+
+        const { data: payment } = await api.post(`/payments/${order.id}/preference`);
         clear();
-        router.push(`/c/${route.params.slug}/pedido/${data.id}`);
+        window.location.href = payment.checkout_url;
     } catch (err) {
         const code = err.response?.data?.code;
         if (code === 'PROFILE_INCOMPLETE') {

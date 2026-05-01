@@ -86,16 +86,18 @@ class CommissionerSalesController extends Controller
 
         $order = DB::transaction(function () use ($data, $customer, $commissioner) {
             $order = Order::create([
-                'user_id'         => $customer->id,           // ingresso pertence ao CLIENTE
-                'commissioner_id' => $commissioner->id,        // quem realizou a venda
+                'user_id'         => $customer->id,
+                'commissioner_id' => $commissioner->id,
                 'customer_name'   => $customer->name,
                 'customer_email'  => $customer->email,
                 'customer_phone'  => $customer->phone,
                 'customer_cpf'    => $customer->cpf
                     ? preg_replace('/\D/', '', $customer->cpf)
                     : null,
-                'notes'   => $data['notes'] ?? null,
-                'status'  => 'pending',
+                'notes'          => $data['notes'] ?? null,
+                'status'         => 'paid',
+                'payment_method' => 'commissioner',
+                'paid_at'        => now(),
             ]);
 
             $subtotal = 0;
@@ -120,8 +122,8 @@ class CommissionerSalesController extends Controller
                         Ticket::create([
                             'ticket_batch_id' => $batch->id,
                             'order_item_id'   => $orderItem->id,
-                            'user_id'         => $customer->id,  // ingresso do CLIENTE
-                            'status'          => 'reserved',
+                            'user_id'         => $customer->id,
+                            'status'          => 'paid',
                         ]);
                     }
 

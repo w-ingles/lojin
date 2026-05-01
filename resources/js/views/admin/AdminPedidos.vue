@@ -39,9 +39,11 @@
                     </Column>
                     <Column header="Ações" style="width:160px">
                         <template #body="{ data }">
-                            <Dropdown :modelValue="data.status" :options="mudancaStatus" optionLabel="label"
+                            <Dropdown v-if="data.status === 'pending' || data.status === 'paid'"
+                                :modelValue="data.status" :options="mudancaStatus" optionLabel="label"
                                 optionValue="value" placeholder="Alterar..." style="width:130px"
                                 @change="(e) => alterarStatus(data, e.value)" />
+                            <Tag v-else :value="statusLabel(data.status)" :severity="statusSeverity(data.status)" />
                         </template>
                     </Column>
                 </DataTable>
@@ -68,8 +70,6 @@ const statusOpts = [
     { label:'Cancelados',value:'cancelled', severity:'danger' },
 ];
 const mudancaStatus = [
-    { label:'Pendente',   value:'pending' },
-    { label:'Pago',       value:'paid' },
     { label:'Cancelado',  value:'cancelled' },
     { label:'Reembolsado',value:'refunded' },
 ];

@@ -18,12 +18,20 @@
  * A classe .scanner-active é adicionada ao body via JS antes de escanear.
  */
 body.scanner-active,
-body.scanner-active #app {
-    background: transparent !important;
-}
+body.scanner-active #app,
 body.scanner-active .layout-wrapper,
 body.scanner-active .store-layout,
-body.scanner-active .public-layout {
+body.scanner-active .public-layout,
+body.scanner-active .layout-main,
+body.scanner-active .layout-content,
+body.scanner-active .layout-menu-container,
+body.scanner-active .layout-topbar,
+body.scanner-active .layout-breadcrumb,
+body.scanner-active .card,
+body.scanner-active .p-card,
+body.scanner-active .p-card-body {
     background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
 }
 

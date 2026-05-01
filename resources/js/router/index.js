@@ -26,6 +26,7 @@ const routes = [
             { path: 'carrinho',     name: 'store-carrinho',    component: () => import('@/views/store/Carrinho.vue') },
             { path: 'checkout',     name: 'store-checkout',    meta: { requiresAuth: true }, component: () => import('@/views/store/Checkout.vue') },
             { path: 'pedido/:id',   name: 'store-pedido',      component: () => import('@/views/store/PedidoConfirmado.vue') },
+            { path: 'pagamento/:resultado/:orderId', name: 'store-pagamento-retorno', component: () => import('@/views/store/PaymentRetorno.vue') },
             { path: 'meus-ingressos', name: 'store-meus-ingressos', meta: { requiresAuth: true },
               component: () => import('@/views/store/MeusIngressos.vue') },
             { path: 'meus-pedidos',   name: 'store-meus-pedidos',   meta: { requiresAuth: true },

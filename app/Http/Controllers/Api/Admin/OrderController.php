@@ -27,12 +27,7 @@ class OrderController extends Controller
 
     public function updateStatus(UpdateOrderStatusRequest $request, Order $order): JsonResponse
     {
-        $data = $request->validated();
-        if ($data['status'] === 'paid') {
-            $order->markAsPaid();
-        } else {
-            $order->update($data);
-        }
+        $order->update($request->validated());
         return response()->json($order->fresh());
     }
 }

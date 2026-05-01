@@ -4,12 +4,14 @@ use App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Api\Admin\TicketValidationController;
 use App\Http\Controllers\Api\Admin\TenantProfileController;
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\Store;
 use App\Http\Controllers\Api\Store\CommissionerSalesController;
 use App\Http\Controllers\Api\Store\UserProfileController;
 use App\Http\Controllers\Api\SuperAdmin\TenantController;
 use App\Http\Controllers\Api\SuperAdmin\UniversityController;
 use App\Http\Controllers\Api\SuperAdmin\CommissionerController as SuperAdminCommissionerController;
+use App\Http\Controllers\Api\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 // ── Autenticação ──────────────────────────────────────────────────────────────
@@ -91,6 +93,14 @@ Route::middleware(['auth:sanctum', 'require.tenant'])->group(function () {
 Route::middleware(['auth:sanctum', 'require.tenant', 'profile.complete'])->group(function () {
     Route::post('/orders', [Store\OrderController::class, 'store']);
 });
+
+// ── Pagamento (Mercado Pago) ───────────────────────────────────────────────────
+Route::middleware(['auth:sanctum', 'require.tenant'])->group(function () {
+    Route::post('/payments/{orderId}/preference', [PaymentController::class, 'criarPreferencia']);
+});
+
+// ── Webhook público do Mercado Pago ───────────────────────────────────────────
+Route::post('/webhooks/mercadopago', [WebhookController::class, 'mercadoPago']);
 
 // ── Admin da atlética ─────────────────────────────────────────────────────────
 Route::middleware(['auth:sanctum','admin'])->prefix('admin')->group(function () {
